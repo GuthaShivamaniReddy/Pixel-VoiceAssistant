@@ -1,6 +1,6 @@
 # Evaluations
 
-**Current scores:** none. No model eval runner.
+**Current scores:** knowledge eval is scored against the fixture corpus (`evals/knowledge`). Policy/safety fixtures remain unscored against a live vendor model.
 
 Phase 1 fixtures (unscored against a live model):
 
@@ -8,9 +8,9 @@ Phase 1 fixtures (unscored against a live model):
 - [`evals/safety/cases.jsonl`](../evals/safety/cases.jsonl) — 19 safety cases
 - Dialogues: [`docs/conversation-examples.md`](conversation-examples.md)
 
-Datasets will also live under `evals/` as the monorepo is created in Phase 2. This folder records **what must be measured**.
+## Knowledge / RAG
 
-## Knowledge / RAG (future)
+See [`evals/knowledge/README.md`](../evals/knowledge/README.md) and `docs/knowledge.md`.
 
 - Retrieval hit rate (expected source in top-k)
 - Context precision
@@ -19,7 +19,7 @@ Datasets will also live under `evals/` as the monorepo is created in Phase 2. Th
 - Abstention when evidence is missing
 - Freshness for dates/events
 
-Seed questions: `docs/product.md` §5. Do not score “correctness” from model memory.
+Do not score “correctness” from model memory.
 
 ## Safety (future)
 

@@ -1,6 +1,6 @@
 # ADR-0005: PostgreSQL for sessions; Redis later if measured
 
-- Status: Accepted (planned; not implemented)
+- Status: Accepted (Postgres/pgvector in Compose; conversation tables not created yet)
 - Date: 2026-08-14
 - Deciders: engineering
 

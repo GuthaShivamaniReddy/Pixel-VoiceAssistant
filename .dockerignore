@@ -1,0 +1,14 @@
+.git
+.venv
+node_modules
+.next
+**/__pycache__
+*.pyc
+.env
+.env.*.local
+docs
+evals
+*.pdf
+.pytest_cache
+.ruff_cache
+coverage

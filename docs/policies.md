@@ -1,11 +1,11 @@
 # Pixel — Behavior Policy
 
 **policy_id:** `pixel-behavior`  
-**version:** `1.1.0`  
+**version:** `1.3.0`  
 **date:** 2026-08-14  
 **status:** Draft for implementation (owner approval UNASSIGNED)  
 **supersedes:** `1.0.0` (Phase 0 seed)  
-**Loaded by code:** No (no orchestrator yet)
+**Loaded by code:** Yes — `packages/pixel/pixel/orchestrator/policy.py` (`POLICY_VERSION` `1.3.0`)
 
 This is the **central conversational contract** for Pixel. Later prompts, orchestrator checks, and tests must implement this file — not a second informal policy.
 
@@ -336,5 +336,7 @@ Align with `product.md` §12:
 |---|---|---|
 | 1.0.0 | 2026-08-14 | Phase 0 seed |
 | 1.1.0 | 2026-08-14 | Phase 1 full contract: freshness, incident order, injection, failures, pointers to split docs |
+| 1.2.0 | 2026-08-14 | Phase 5: same contract loaded as a versioned server-side system prompt |
+| 1.3.0 | 2026-08-14 | Phase 6: retrieval-required org facts; retrieved text is untrusted data |
 
 Changing this policy in a running system later requires review. Do not silently alter retention or safety.

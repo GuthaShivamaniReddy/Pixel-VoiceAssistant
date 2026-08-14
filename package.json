@@ -1,0 +1,19 @@
+{
+  "name": "pixel",
+  "private": true,
+  "workspaces": ["apps/web"],
+  "scripts": {
+    "web:dev": "npm run dev -w @pixel/web",
+    "web:build": "npm run build -w @pixel/web",
+    "web:start": "npm run start -w @pixel/web",
+    "web:lint": "npm run lint -w @pixel/web",
+    "web:typecheck": "npm run typecheck -w @pixel/web",
+    "web:test": "npm run test -w @pixel/web",
+    "web:e2e": "npm run e2e -w @pixel/web",
+    "web:format": "npm run format -w @pixel/web",
+    "web:format:check": "npm run format:check -w @pixel/web"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

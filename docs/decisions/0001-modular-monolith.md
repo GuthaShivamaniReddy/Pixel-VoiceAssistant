@@ -1,6 +1,6 @@
 # ADR-0001: Modular monolith — Next.js, FastAPI, PostgreSQL/pgvector
 
-- Status: Accepted (planned; not implemented)
+- Status: Accepted (foundation implemented)
 - Date: 2026-08-14
 - Deciders: engineering (repository owners UNASSIGNED)
 

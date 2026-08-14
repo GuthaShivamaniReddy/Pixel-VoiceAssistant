@@ -3,7 +3,7 @@
 **Document type:** Product discovery and constraints  
 **Status:** Phase 0 complete (documentation only)  
 **Specification:** `Pixel_CyberFlorida_AI_Voice_Assistant_Project_Guide.pdf` v1.0 (August 2026)  
-**Implementation status:** Pixel is **not** a running product. This file describes intended product scope, not shipped behavior.
+**Implementation status:** Phase 3 conversation UX exists with **mocked** replies. Pixel is **not** a production assistant. This file still describes intended product scope.
 
 Related: `policies.md`, `architecture.md`, `risk-register.md`, `REQUIREMENTS.md`, `GAP_ANALYSIS.md`, `ROADMAP.md`.
 
@@ -308,7 +308,7 @@ Release 3+: mobile-native, kiosk, multilingual production, proactive notificatio
 - Knowledge can be updated without redeploying the whole app.
 - Engineering can measure latency, retrieval quality, failures, feedback, and safety events.
 
-**These criteria are not met.** There is no product to measure.
+**These criteria are not met for the full MVP.** Phase 3 is a mocked conversation prototype only; there is no production assistant to measure.
 
 ---
 

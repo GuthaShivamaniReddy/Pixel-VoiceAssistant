@@ -1,14 +1,13 @@
 # Pixel — Architecture
 
 **Canonical path:** `docs/architecture.md` (same file as `ARCHITECTURE.md` on Windows).  
-**Document status:** Target architecture for a system that is **not yet implemented**.  
-**Implemented architecture:** none — no `apps/`, APIs, database, or providers exist. Verified 2026-08-14 (`docs/GAP_ANALYSIS.md`).
+**Document status:** Target architecture plus implemented Phase 4 voice loop (`docs/voice.md`), Phase 5 orchestrator (`docs/orchestrator.md`), and Phase 6 knowledge/RAG (`docs/knowledge.md`). Production tools are not implemented.
 
 This file describes the **intended** platform. Do not read any diagram below as a running system.
 
 **Phase 0 spec alignment:** Entity names, UI states, feedback timing, and provider aliases that differ from the PDF are listed in `docs/risk-register.md` §1 (C-01–C-07). They are **not** silently overwritten here. User-visible states must include IDLE / LISTENING / PROCESSING / SPEAKING / ERROR (`product.md` §20).
 
-Related: `product.md`, `policies.md`, `risk-register.md`, `REQUIREMENTS.md`, `DATA_FLOW.md`, `docs/security/`, `docs/decisions/`, `ROADMAP.md`, `REPOSITORY_ASSESSMENT.md`.
+Related: `product.md`, `policies.md`, `docs/orchestrator.md`, `docs/voice.md`, `risk-register.md`, `REQUIREMENTS.md`, `DATA_FLOW.md`, `docs/security/`, `docs/decisions/`, `ROADMAP.md`, `REPOSITORY_ASSESSMENT.md`.
 
 ---
 
@@ -267,7 +266,7 @@ Evaluated against an **empty repository** (`REPOSITORY_ASSESSMENT.md`). No exist
 
 | Field | Value |
 |---|---|
-| **Technology** | Next.js 15, React 19, TypeScript |
+| **Technology** | Next.js 16, React 19, TypeScript |
 | **Purpose** | Responsive Pixel UI, state machine, mic/playback, transcripts, source cards |
 | **Why selected** | Production web default in the project guide; TypeScript; App Router for routing and future public pages; strong a11y ecosystem |
 | **Alternatives** | Vite + React SPA; Remix; SvelteKit |
@@ -415,7 +414,7 @@ pixel/
   scripts/
 ```
 
-Phase 2 creates this tree. Phase 0 does not.
+Phase 2 implemented this layout as a single `packages/pixel` Python package with `ai`, `voice`, `knowledge`, `tools`, `security`, `observability`, and `shared` modules (ADR 0001). Separate publishable packages per folder are not required for Phases 2–3.
 
 ---
 
@@ -557,7 +556,7 @@ Additional operational fields (not shown to the model as instructions): `access_
 2. Query is built from the current user turn plus minimal resolving context (not the full raw history dump).
 3. Embed query → vector search with metadata filters (`is_active`, `access_class` matching the caller).
 4. Return top-k chunks with scores and source metadata.
-5. Rerank only after a baseline hit-rate is measured (Phase 6).
+5. Rerank only after a baseline hit-rate is measured. Phase 6 baseline does **not** rerank.
 6. Evidence bundle is passed to the LLM as data. Citations use `source_url` / title.
 7. Output validator rejects org-specific claims with no supporting chunk.
 
@@ -565,7 +564,7 @@ Public and internal corpora must not share an index without `access_class` enfor
 
 ### 10.4 Allowlist
 
-Only registered sources in the knowledge tables may be fetched. No open-web browse tool in MVP.
+See `docs/knowledge.md` for the implemented registry, fixture corpus, chunking, embeddings, pgvector schema, retrieval filters, grounding, and abstention.
 
 ---
 

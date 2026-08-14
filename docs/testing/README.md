@@ -1,30 +1,30 @@
 # Testing strategy
 
-**Current test status:** No test runner, no tests, no coverage. `docs/GAP_ANALYSIS.md` records every runtime requirement as MISSING.
-
-Pixel needs deterministic software tests **and** evaluation datasets (see `docs/evaluations/`).
+**Current test status (Phases 2–6):** Python pytest (API/orchestrator/knowledge/providers), Vitest (web), Playwright Chromium E2E for text, voice PTT, barge-in, follow-ups, clear, and injection. Knowledge eval scores Hit@k, groundedness, citations, abstention, and freshness against the fixture corpus. CI runs format, lint, typecheck, tests, build, Playwright, and dependency scans.
 
 ## Layers (required before production)
 
 | Layer | What to verify | Exists now |
 |---|---|---|
-| Unit | State transitions, routing, chunking, tool schemas, authz, redaction, fallbacks | No |
-| Contract | Provider adapters, API models, migrations | No |
-| Integration | message → orchestrator → retrieval → model (mocks); ingest → search | No |
-| End-to-end | Browser text + voice states, barge-in, sources, clear session | No |
-| Voice quality | Domain terms, silence, interrupt | No |
-| RAG eval | Hit rate, groundedness, abstention, freshness | No |
-| Safety / red-team | Injection, prompt leak, tool abuse, harmful cyber | No |
-| Performance | Concurrent sessions, stage latency | No |
-| Accessibility | Keyboard, labels, transcript, contrast | No |
+| Unit | State transitions, mock provider, env guards, API health/CORS/admin | Yes |
+| Contract | Provider adapters, API models, migrations | Partial (Postgres knowledge tests skip without `PIXEL_TEST_DATABASE_URL`) |
+| Integration | message → orchestrator → retrieval → model (mocks); ingest → search | Yes (Phase 6) |
+| End-to-end | Browser text + mocked listen/stop, error recovery, source cards | Yes |
+| Voice quality | Domain terms, silence, interrupt | Partial (Playwright PTT + barge-in; live vendor STT not verified) |
+| RAG eval | Hit rate, groundedness, abstention, freshness | Yes (fixture corpus) |
+| Safety / red-team | Injection, prompt leak, tool abuse, harmful cyber | Fixtures + retrieval injection test; live model not scored |
+| Performance | Concurrent sessions, stage latency | Partial (per-turn timings including retrieval) |
+| Accessibility | Keyboard, labels, transcript, contrast | Partial (unit + labels; no axe suite) |
 | UAT | Real user tasks | No |
 
 ## Failure tests (mandatory later)
 
 Microphone denied; no mic; silence; network drop; STT error; LLM timeout; empty retrieval; inactive source; TTS fail after text; tool denied; repeated barge-in; injected instructions in retrieved content; requests for prompts/credentials.
 
+Phase 3 covers mocked network/response/timeout/empty failures plus permission-denied copy.
+
 ## CI expectation (Phase 2+)
 
-Lint, typecheck, unit tests, build, dependency scan. RAG/safety evals on AI-changing PRs once datasets exist.
+Lint, typecheck, unit tests, build, dependency scan, Playwright Chromium E2E. RAG/safety evals on AI-changing PRs once datasets exist.
 
 Do not add tests that require live paid APIs or a physical microphone in CI.

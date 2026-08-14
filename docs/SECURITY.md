@@ -1,7 +1,7 @@
 # Pixel — Security
 
 **Canonical folder:** `docs/security/`  
-**Document status:** Planned controls. **Not implemented.** No runtime exists.
+**Document status:** Target controls. Phase 2 implemented CORS allowlisting, admin fail-closed, and rejection of secret-shaped `NEXT_PUBLIC_*` keys. Most SEC-* / PRIV-* controls are still planned. There is a runtime skeleton, not a production security program.
 
 References: OWASP Top 10 for LLM Applications, NIST AI RMF, WCAG 2.2 (a11y adjacent), `REQUIREMENTS.md` SEC-* / PRIV-*.
 

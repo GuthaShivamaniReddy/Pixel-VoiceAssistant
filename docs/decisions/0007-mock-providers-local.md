@@ -1,6 +1,6 @@
 # ADR-0007: Mock providers by default locally
 
-- Status: Accepted (planned; not implemented)
+- Status: Accepted (local default is mock; production Settings rejects mock providers)
 - Date: 2026-08-14
 - Deciders: engineering
 

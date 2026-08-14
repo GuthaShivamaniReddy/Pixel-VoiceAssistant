@@ -1,6 +1,6 @@
 # ADR-0003: WebSocket and push-to-talk before WebRTC
 
-- Status: Accepted (planned; not implemented)
+- Status: Accepted (implemented in Phase 4: `WS /v1/realtime` + PTT)
 - Date: 2026-08-14
 - Deciders: engineering
 

@@ -1,10 +1,10 @@
 # Pixel — Cyber Florida AI Voice Assistant
 
-**Current status: Planning (Phase 0–1 documentation)**
+**Current status: Phase 6 complete (Cyber Florida knowledge ingestion and RAG)**
 
-Pixel is not a running assistant. This repository holds the project specification, Phase 0 constraints, and a target architecture. There is no voice input, speech-to-text, AI conversation, RAG, text-to-speech, tests, or production build.
+Pixel answers organization-specific questions from an approved source registry with retrieval, grounding, citations, and abstention. Local default providers may still be `mock` unless `OPENAI_API_KEY` is configured. Production tools are not implemented.
 
-Do not treat documentation as a working product.
+Do not treat this as a production assistant.
 
 ---
 
@@ -12,101 +12,162 @@ Do not treat documentation as a working product.
 
 Pixel is Cyber Florida’s planned voice and conversational interface: a trustworthy AI assistant that listens, understands, retrieves **approved** Cyber Florida information, reasons within defined boundaries, speaks naturally, and guides users to the correct next step.
 
-Specialization:
-
-- Cyber Florida information, programs, training, workforce resources, research, and events
-- Cybersecurity education and awareness
-- Phishing / scam awareness
-- Defensive cybersecurity guidance
-
 It is **not** a generic chatbot with a microphone and **not** an offensive-security agent.
-
-Target experience (future):
-
-Voice input → Speech-to-Text → AI reasoning → RAG / tools → Grounded response → Text-to-Speech → conversation  
-
-Text is a full fallback.
 
 ---
 
-## What exists today (verified)
+## Repository layout
 
-| Item | Status |
+```text
+apps/web          Next.js conversation UX
+apps/api          FastAPI health, sessions, turns, realtime voice
+apps/worker       Ingestion worker (`pixel-worker ingest` indexes the fixture corpus)
+packages/pixel    Orchestrator, knowledge/RAG, domain models, provider adapters
+infra/            Docker Compose, Dockerfiles, Postgres init
+evals/            Policy, safety, and knowledge evaluation datasets
+docs/             Product, policy, architecture
+```
+
+---
+
+## Prerequisites
+
+- Node.js 20+
+- Python 3.12+ (3.12 recommended; CI uses 3.12)
+- Docker Desktop running (for Postgres/pgvector and optional full stack)
+
+---
+
+## Configure
+
+```bash
+copy .env.example .env
+```
+
+On macOS/Linux: `cp .env.example .env`
+
+`.env.example` contains **local placeholders only**. Never put real API keys in git.
+
+Environment templates:
+
+| File | Use |
 |---|---|
-| Application code (`apps/`, packages) | **None** |
-| Database, APIs, providers | **None** |
-| Tests, CI, containers | **None** |
-| Secrets / API keys in repo | **None found** |
-| Project guide PDF | Present |
-| Phase 0 product + policy + architecture docs | Present under `docs/` |
+| `.env.example` | Local default |
+| `.env.development.example` | Shared development-shaped values |
+| `.env.staging.example` | Staging-shaped values (fake hosts) |
+| `.env.production.example` | Production-shaped values (fake hosts, mocks off) |
 
-Gap analysis: [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md).
+---
+
+## Install
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip
+pip install -e ".[dev]"
+
+npm install
+```
+
+---
+
+## Start
+
+Postgres + pgvector (required for `/ready` with a database):
+
+```bash
+docker compose -f infra/docker-compose.yml up db -d
+```
+
+API:
+
+```bash
+python -m uvicorn pixel_api.main:app --host 127.0.0.1 --port 8000
+```
+
+Or: `python -m pixel_api.main` / `pixel-api`
+
+Web (another terminal):
+
+```bash
+npm run web:dev
+```
+
+Optional full stack:
+
+```bash
+docker compose -f infra/docker-compose.yml up --build
+```
+
+- Web: http://localhost:3000
+- API health: http://127.0.0.1:8000/health
+- API ready: http://127.0.0.1:8000/ready
+
+Worker stub:
+
+```bash
+pixel-worker
+```
+
+---
+
+## Quality checks
+
+```bash
+ruff format apps/api apps/worker packages/pixel
+ruff format --check apps/api apps/worker packages/pixel
+ruff check apps/api apps/worker packages/pixel
+pyright
+pytest
+
+npm run web:format:check
+npm run web:lint
+npm run web:typecheck
+npm run web:test
+npm run web:e2e
+npm run web:build
+```
+
+Dependency scans:
+
+```bash
+pip-audit
+npm audit --audit-level=high
+```
+
+---
+
+## Security notes
+
+- Provider secrets stay on the server. Do not add `NEXT_PUBLIC_*` keys, tokens, or passwords.
+- Admin routes return **403** until real authentication exists (`ADMIN_ENABLED` defaults false).
+- CORS is an explicit origin list, not `*`.
+- Production settings must not use mock LLM/STT/TTS providers.
+
+See [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) and [docs/security/](docs/security/). Conversation UX notes: [docs/conversation-ux.md](docs/conversation-ux.md).
 
 ---
 
 ## Documentation
 
-Start here: [docs/README.md](docs/README.md).
-
-Required core set:
-
-| Document | Contents |
-|---|---|
-| [docs/product.md](docs/product.md) | Vision, users, MVP, ownership, sources, retention |
-| [docs/policies.md](docs/policies.md) | Behavior contract v1.1.0 |
-| [docs/conversation-examples.md](docs/conversation-examples.md) | 102 example dialogues |
-| [docs/architecture.md](docs/architecture.md) | Target architecture (unimplemented) |
-| [docs/risk-register.md](docs/risk-register.md) | Risks, assumptions, spec conflicts |
-| [docs/decisions/](docs/decisions/) | ADRs |
-| [docs/runbooks/](docs/runbooks/) | Operational templates |
-| [docs/testing/](docs/testing/) | Test strategy |
-| [docs/security/](docs/security/) | Threat model |
-| [docs/evaluations/](docs/evaluations/) | Eval placeholders |
-
----
-
-## Planned stack (not installed)
-
-Recorded in `docs/architecture.md` and `docs/decisions/`:
-
-- **Web:** Next.js, React, TypeScript
-- **API:** Python FastAPI
-- **Data:** PostgreSQL + pgvector
-- **Voice transport (MVP):** WebSocket + push-to-talk (WebRTC later if measured)
-- **Providers:** adapters for LLM, STT, TTS, embeddings, vector store
-- **Local default:** mock providers; no committed secrets
-
----
-
-## Local development
-
-Not applicable. There is no application to install or run.
-
-**Never commit API keys.**
-
----
-
-## Development rules
-
-- Follow [docs/ROADMAP.md](docs/ROADMAP.md). Do not skip foundation, security, or evaluation for a demo.
-- Retrieved knowledge is untrusted and must not override [docs/policies.md](docs/policies.md).
-- Do not claim a feature works unless it is implemented and tested.
-- Do not automatically start the next phase after finishing one.
+Start at [docs/README.md](docs/README.md). Behavior contract: [docs/policies.md](docs/policies.md).
 
 ---
 
 ## Phase status
 
-| Phase | Name | Status |
-|---|---|---|
-| 0 | Product discovery and constraints | **Complete (docs)** |
-| 1 | Identity, conversation policy, and safety rules | **Complete (docs)** |
-| 2+ | Engineering foundation through production | **Not started** |
+| Phase | Status |
+|---|---|
+| 0 Product discovery | Complete (docs) |
+| 1 Identity and safety policy | Complete (docs) |
+| 2 Engineering foundation | Complete |
+| 3 Conversation UX prototype | Complete |
+| 4 End-to-end voice loop | Complete — see [docs/voice.md](docs/voice.md) |
+| 5+ Orchestrator through production | Not started |
 
 ---
 
 ## Source notes
 
-Cyber Florida context is based on public Cyber Florida at USF information. Stack and security recommendations still require Cyber Florida / USF technology, security, procurement, accessibility, and privacy validation before production.
-
-- [Cyber Florida](https://cyberflorida.org/)
+Cyber Florida context is based on public [Cyber Florida](https://cyberflorida.org/) information. Hosting, SSO, and paid vendors are not chosen in this repository.

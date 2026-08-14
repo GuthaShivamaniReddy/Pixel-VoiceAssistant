@@ -1,0 +1,54 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: pixel
+      POSTGRES_PASSWORD: pixel_dev_only
+      POSTGRES_DB: pixel
+    ports:
+      - "5432:5432"
+    volumes:
+      - pixel_pgdata:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/01-vector.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pixel -d pixel"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/api.Dockerfile
+    environment:
+      PIXEL_ENV: local
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      CORS_ORIGINS: http://localhost:3000
+      DATABASE_URL: postgresql://pixel:pixel_dev_only@db:5432/pixel
+      ADMIN_ENABLED: "false"
+      LLM_PROVIDER: mock
+      STT_PROVIDER: mock
+      TTS_PROVIDER: mock
+      EMBEDDING_PROVIDER: mock
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  pixel_pgdata:

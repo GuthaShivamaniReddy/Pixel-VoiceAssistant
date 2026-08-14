@@ -4,7 +4,7 @@
 **Specification:** `Pixel_CyberFlorida_AI_Voice_Assistant_Project_Guide.pdf` v1.0  
 **Method:** Recursive repository inspection. Documentation is **not** treated as implementation.
 
-**Repository reality:** There is **no application**. Files present: the PDF, `README.md`, and planning markdown under `docs/`. No `apps/`, packages, tests, CI, Docker, database, APIs, providers, or secrets.
+**Repository reality (Phase 0 snapshot):** At assessment time there was **no application**. This file is a historical Phase 0 inspection. Phases 2–3 later added `apps/`, packages, tests, CI, Docker, and a mocked conversation UI. Do not read the tables below as current runtime status.
 
 Status key:
 

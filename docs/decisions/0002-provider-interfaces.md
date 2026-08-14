@@ -1,6 +1,6 @@
 # ADR-0002: Provider interfaces
 
-- Status: Accepted (planned; not implemented)
+- Status: Accepted (interfaces in `packages/pixel`; mock and OpenAI adapters implemented)
 - Date: 2026-08-14
 - Deciders: engineering
 

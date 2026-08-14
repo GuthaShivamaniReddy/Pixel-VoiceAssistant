@@ -1,8 +1,8 @@
 # Pixel — Roadmap
 
-**Document status:** Specification Phase 0 (product discovery and constraints) is complete as documentation. **Do not start the next phase automatically.**
+**Document status:** Phase 6 knowledge/RAG is complete. **Do not start Phase 7 automatically.**
 
-This roadmap follows the project-guide PDF’s fourteen-phase method. Pixel has **no application code**.
+This roadmap follows the project-guide PDF’s fourteen-phase method.
 
 ---
 
@@ -11,10 +11,13 @@ This roadmap follows the project-guide PDF’s fourteen-phase method. Pixel has 
 | Phase | Name | Status |
 |---|---|---|
 | 0 | Product discovery and constraints | **Complete (docs)** |
-| 1 | Assistant identity, conversation policy, and safety rules | **Complete (docs)** — policy `1.1.0`; 102 examples |
-| 2–14 | Foundation through continuous improvement | **Not started** |
-
-No application code, tests, or production build exist.
+| 1 | Assistant identity, conversation policy, and safety rules | **Complete (docs)** |
+| 2 | Repository, environments, and engineering foundation | **Complete** |
+| 3 | Conversation UX prototype | **Complete** |
+| 4 | End-to-end voice loop | **Complete (PARTIAL live STT/TTS)** |
+| 5 | AI orchestrator and conversation state | **Complete** |
+| 6 | Cyber Florida knowledge ingestion and RAG | **Complete** |
+| 7–14 | Tools through continuous improvement | **Not started** |
 
 ---
 
@@ -65,48 +68,61 @@ No application code, tests, or production build exist.
 
 **Depends on:** Phase 0.
 
-**Do not:** start Phase 2 automatically.
+**Do not:** start Phase 3 automatically.
 
 ---
 
 ## Phase 2 — Repository, environments, and engineering foundation
 
+**Status:** Complete as engineering foundation. Conversation UI, STT/TTS, RAG, and tools are not implemented.
+
 **Objective:** Reproducible monorepo with checks. Still no real AI loop required.
 
-**Work:**
+**Delivered:**
 
-- Git, gitignore, `apps/web`, `apps/api`, `apps/worker`, `packages/*`.
-- TypeScript + Python tooling: lint, format, typecheck, unit test harness.
-- `.env.example` without secrets.
-- Docker Compose: API + Postgres/pgvector.
+- Git-ready monorepo: `apps/web`, `apps/api`, `apps/worker`, `packages/pixel`.
+- TypeScript + Python tooling: lint, format, typecheck, unit tests.
+- `.env.example` and environment-shaped templates without secrets.
+- Docker Compose: API + web + Postgres/pgvector (`docker compose ... config` verified; starting containers needs Docker Desktop).
 - CI: lint, typecheck, unit tests, build, dependency scan.
-- Health endpoints; typed settings.
-- ADR template; coding standards.
+- Health/ready endpoints; typed settings; admin fail-closed; production rejects mock providers.
+- Provider Protocols only (no vendor adapters).
+- ADR template and coding standards.
 
 **Exit:** A new engineer can clone, configure, and run empty services locally. CI blocks obvious failures.
 
 **Does not:** implement STT/TTS/RAG beyond stubs/interfaces.
 
+**Residual:** Docker daemon was not running on the Phase 2 workstation, so Compose `up` was not verified. Local Python was 3.14; CI uses 3.12.
+
 ---
 
 ## Phase 3 — Conversation UX prototype
 
+**Status:** Complete as a mocked conversation UI. Real STT/TTS/RAG are not implemented.
+
 **Objective:** Visible Pixel experience with a **mock** conversation provider.
 
-**Work:**
+**Delivered:**
 
-- Implement the state machine from `ARCHITECTURE.md`.
-- Mic permission, text input, transcript, stop/mute/clear, keyboard a11y.
-- Source card and action placeholders.
-- Mock replies so UI is testable without backends/providers.
+- User-visible state machine: IDLE, LISTENING, PROCESSING, SPEAKING, ERROR, PERMISSION_DENIED.
+- Microphone permission UX (no audio streaming).
+- Text input as a full path; transcript; stop/mute/cancel/clear.
+- Source cards and recommended actions labeled as mock (not live RAG).
+- Deterministic `MockConversationProvider`.
+- Unit, component, and Playwright E2E tests.
+
+**Documented in:** `docs/conversation-ux.md`.
 
 **Exit:** Core conversation is understandable without a manual. Every voice action has a visual/text alternative.
+
+**Does not:** real STT, TTS, audio streaming, barge-in, orchestrator, RAG, or production tools.
 
 ---
 
 ## Phase 4 — End-to-end voice loop
 
-**Objective:** Smallest **real** path: mic → STT → short answer → TTS → barge-in.
+**Status:** Complete as the first real voice loop (PTT, server STT/TTS adapters, barge-in). Default local providers may still be `mock` without `OPENAI_API_KEY`.
 
 **Work:**
 
@@ -139,6 +155,8 @@ No application code, tests, or production build exist.
 ## Phase 6 — Cyber Florida knowledge ingestion and RAG
 
 **Objective:** Org-specific answers grounded in approved content.
+
+**Status:** Complete as a governed public RAG path (fixture corpus locally; Postgres/pgvector implemented).
 
 **Work:**
 
@@ -269,12 +287,10 @@ Before calling a phase complete:
 
 ---
 
-## Ready for Phase 2?
+## Ready for Phase 5?
 
-**YES** to begin engineering foundation when you explicitly say **Proceed to Phase 2.**
+**YES** to begin the orchestrator when you explicitly say **Proceed to Phase 5.**
 
-**NO** for treating Pixel as implemented, enabling admin ingestion, or production.
-
-**NO** for loading these policies into a live model until Phase 5+ with mocks labeled as mocks.
+**NO** for treating Pixel as production RAG, tools, or a full conversation manager.
 
 Owner sign-off of `pixel-behavior` `1.1.0` remains UNASSIGNED.
