@@ -1,15 +1,25 @@
-"""Approved tools. Implementations belong to Phase 7 — not here.
+"""Approved low-risk tools. Execution is server-side only."""
 
-Phase 5 records a ToolDecision on the orchestrator. Nothing is executed.
-"""
+from pixel.tools.registry import ToolRegistry, ToolRegistryError, production_registry
+from pixel.tools.runner import execute_tool
+from pixel.tools.select import select_tool_calls
+from pixel.tools.types import (
+    AuthContext,
+    ConfirmationState,
+    NormalizedToolResult,
+    SourceOffer,
+    ToolDefinition,
+)
 
-from dataclasses import dataclass
-
-
-@dataclass(frozen=True)
-class ToolPermission:
-    name: str
-    allowed: bool = False
-
-
-__all__ = ["ToolPermission"]
+__all__ = [
+    "AuthContext",
+    "ConfirmationState",
+    "NormalizedToolResult",
+    "SourceOffer",
+    "ToolDefinition",
+    "ToolRegistry",
+    "ToolRegistryError",
+    "execute_tool",
+    "production_registry",
+    "select_tool_calls",
+]

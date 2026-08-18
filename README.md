@@ -1,8 +1,8 @@
 # Pixel — Cyber Florida AI Voice Assistant
 
-**Current status: Phase 6 complete (Cyber Florida knowledge ingestion and RAG)**
+**Current status: Phase 9 complete (product quality and frontend polish)**
 
-Pixel answers organization-specific questions from an approved source registry with retrieval, grounding, citations, and abstention. Local default providers may still be `mock` unless `OPENAI_API_KEY` is configured. Production tools are not implemented.
+Pixel answers organization-specific questions from an approved source registry with retrieval, grounding, citations, and abstention. It can offer approved Cyber Florida Open links via server-side tools. Local default providers may still be `mock` unless `OPENAI_API_KEY` is configured.
 
 Do not treat this as a production assistant.
 
@@ -164,7 +164,12 @@ Start at [docs/README.md](docs/README.md). Behavior contract: [docs/policies.md]
 | 2 Engineering foundation | Complete |
 | 3 Conversation UX prototype | Complete |
 | 4 End-to-end voice loop | Complete — see [docs/voice.md](docs/voice.md) |
-| 5+ Orchestrator through production | Not started |
+| 5 AI orchestrator | Complete — see [docs/orchestrator.md](docs/orchestrator.md) |
+| 6 Knowledge / RAG | Complete — see [docs/knowledge.md](docs/knowledge.md) |
+| 7 Tools and navigation | Complete — see [docs/tools.md](docs/tools.md) |
+| 8 Security, privacy, abuse resistance | Complete — see [docs/security/](docs/security/) |
+| 9 Product quality and frontend polish | Complete — see [docs/conversation-ux.md](docs/conversation-ux.md) |
+| 10+ Observability through production | Not started |
 
 ---
 

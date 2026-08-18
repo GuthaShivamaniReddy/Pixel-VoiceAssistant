@@ -7,7 +7,7 @@ assertNoSecretShapedPublicEnv();
 
 export const metadata: Metadata = {
   title: "Pixel — Cyber Florida",
-  description: "Cyber Florida AI voice assistant (conversation UX prototype)",
+  description: "Cyber Florida AI voice assistant for public information and defensive guidance",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

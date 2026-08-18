@@ -1,3 +1,5 @@
+import { ControlIcon } from "./ControlIcon";
+
 type ErrorPanelProps = {
   title: string;
   detail: string;
@@ -9,17 +11,20 @@ type ErrorPanelProps = {
 export function ErrorPanel({ title, detail, onRetry, onIdle, onFocusText }: ErrorPanelProps) {
   return (
     <div className="error-panel" role="alert">
+      <p className="error-panel__label">What happened</p>
       <h2>{title}</h2>
+      <p className="error-panel__label">What you can do</p>
       <p>{detail}</p>
       <div className="controls">
         <button type="button" className="control control--primary" onClick={onRetry}>
+          <ControlIcon name="retry" />
           Try again
         </button>
         <button type="button" className="control" onClick={onFocusText}>
-          Use text instead
+          Use text
         </button>
-        <button type="button" className="control" onClick={onIdle}>
-          Return to idle
+        <button type="button" className="control control--quiet" onClick={onIdle}>
+          Return to ready
         </button>
       </div>
     </div>

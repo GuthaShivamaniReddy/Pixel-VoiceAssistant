@@ -1,3 +1,5 @@
+import { ControlIcon } from "./ControlIcon";
+
 type StopControlProps = {
   state: string;
   onStopListening: () => void;
@@ -11,18 +13,19 @@ export function StopControl({ state, onStopListening, onStopSpeaking }: StopCont
   return (
     <button
       type="button"
-      className="control"
+      className={`control${listening ? " control--primary" : ""}`}
       disabled={!enabled}
       onClick={listening ? onStopListening : onStopSpeaking}
       aria-label={
         listening
-          ? "Stop listening and send the sample question"
+          ? "Stop listening and send speech"
           : speaking
             ? "Stop Pixel speaking"
             : "Stop unavailable"
       }
     >
-      Stop
+      <ControlIcon name="stop" />
+      {listening ? "Stop listening" : "Stop"}
     </button>
   );
 }

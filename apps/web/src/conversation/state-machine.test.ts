@@ -10,6 +10,10 @@ describe("conversation state machine", () => {
     expect(reduceState("listening", { type: "STOP_LISTEN" })).toBe("processing");
   });
 
+  it("allows processing to idle when speech is skipped", () => {
+    expect(reduceState("processing", { type: "SPEAKING_DONE" })).toBe("idle");
+  });
+
   it("allows processing to speaking", () => {
     expect(reduceState("processing", { type: "RESPONSE_READY" })).toBe("speaking");
   });

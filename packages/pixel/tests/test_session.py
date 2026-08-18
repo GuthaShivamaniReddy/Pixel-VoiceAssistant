@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from pixel.domain import InputMode, Intent
 from pixel.orchestrator.session import MAX_MESSAGES, SessionError, SessionStore
+from pixel.tools.types import SourceOffer
 
 
 def test_create_and_get_session() -> None:
@@ -49,6 +50,35 @@ def test_clear_then_follow_up_has_no_referent() -> None:
     )
     store.clear(session.id)
     assert store.get(session.id).history_tuple() == ()
+    assert store.get(session.id).last_offers == []
+
+
+def test_empty_turn_does_not_clear_program_offers() -> None:
+    store = SessionStore(ttl_seconds=60)
+    session = store.create()
+    offer = SourceOffer(
+        source_id="cf-seccdc",
+        title="SECCDC",
+        url="https://cyberflorida.org/seccdc/",
+    )
+    session.commit_turn(
+        generation=0,
+        turn_id="t1",
+        user_text="What programs are available for students?",
+        assistant_text="SECCDC is listed.",
+        intent=Intent.cyberflorida_knowledge,
+        offers=(offer,),
+    )
+    session.generation = 1
+    session.commit_turn(
+        generation=1,
+        turn_id="t2",
+        user_text="Tell me more about the first one.",
+        assistant_text="Checking.",
+        intent=Intent.cyberflorida_knowledge,
+        offers=(),
+    )
+    assert session.last_offers == [offer]
 
 
 def test_concurrent_begin_cancels_previous() -> None:

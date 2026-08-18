@@ -49,7 +49,7 @@ No PDF MVP requirement was removed because it was hard.
 | S-04 | Arbitrary tools / URLs | Critical | High if model-driven | Allowlist, schema, server authz, confirmation | Unimplemented |
 | S-05 | Offensive cyber assistance | High | Medium | Policy refuse; safety evals | Unimplemented |
 | S-06 | XSS from model/RAG HTML | High | Medium | Encode as text | Unimplemented |
-| S-07 | Session guessing / abuse | High | High (public) | Unguessable IDs; rate limits | Unimplemented |
+| S-07 | Session guessing / abuse | High | High (public) | Unguessable IDs; in-process rate limits | Mitigated for single-process; not cluster-wide |
 | S-08 | Dependency / supply chain | Medium | Medium | Lockfiles + CI SCA in foundation phase | No lockfiles yet |
 
 ---

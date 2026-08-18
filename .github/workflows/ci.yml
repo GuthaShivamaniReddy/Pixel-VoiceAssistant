@@ -21,7 +21,7 @@ jobs:
         run: ruff check apps/api apps/worker packages/pixel
       - name: Type check
         run: pyright
-      - name: Tests
+      - name: Tests (includes security, secret-marker scan)
         run: pytest
       - name: Dependency scan
         run: pip-audit

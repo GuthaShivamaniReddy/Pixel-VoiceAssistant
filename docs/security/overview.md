@@ -1,6 +1,6 @@
 # Security overview (Phase 0)
 
-Pixel will represent a cybersecurity organization. Users will over-trust it. Runtime enforcement does not exist yet; this is the threat model starters must implement against.
+Pixel will represent a cybersecurity organization. Users will over-trust it. Phase 8 runtime controls are documented in [threat-model.md](threat-model.md) and [security-review.md](security-review.md). This file keeps the original Phase 0 decisions.
 
 ## Trust boundaries (planned)
 

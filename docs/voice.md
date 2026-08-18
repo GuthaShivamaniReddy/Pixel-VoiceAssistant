@@ -32,7 +32,11 @@ Core code depends on `SpeechToTextProvider`, `LLMProvider`, and `TextToSpeechPro
 
 Mock STT does **not** decode speech. If enough audio is captured it returns a fixture transcript (`What is Cyber Florida?`) so the loop can be tested without a paid key. Set `STT_PROVIDER=openai` and `OPENAI_API_KEY` for real transcription.
 
-Mock TTS returns a short generated WAV so playback, barge-in, and Stop are real audio operations.
+Mock TTS returns generated WAV with short pauses so playback, barge-in, Stop, and mouth amplitude are real audio operations. It is a tone, not a human voice. Set `TTS_PROVIDER=openai` and `OPENAI_API_KEY` for spoken words. Default voice is OpenAI `nova` (`OPENAI_TTS_VOICE` / `PIXEL_TTS_VOICE`).
+
+TTS speaks a derived `speech_text` from the same grounded reply: URLs are not read aloud; extra citations stay on screen.
+
+## Barge-in and cancellation
 
 ## Barge-in and cancellation
 
@@ -44,15 +48,21 @@ Stop during speaking stops playback immediately. Cancel aborts listen/processing
 
 ## Mute
 
-Mute skips audible playback. The transcript still appears. If mute is turned on while speaking, playback stops and Pixel returns to idle. TTS may still be generated for unmuted text turns (`speak: false` when already muted).
+Mute skips audible playback. The transcript still appears. If mute is turned on while speaking, playback stops and Pixel returns to idle without a speaking mouth. TTS is not requested for muted text turns (`speak: false`).
+
+The speaking mascot state starts when playable audio actually begins, not when text arrives. Playback amplitude is measured transiently for mouth/waveform animation and is not stored.
 
 ## Latency
 
-Each turn records `time_to_transcript_ms`, `model_latency_ms`, `tts_latency_ms`, `time_to_first_audio_ms`, and `total_turn_latency_ms` (plus `session_id` / `turn_id` / `correlation_id` on REST). Pixel turns show a “Turn timing” disclosure.
+## Latency
+
+Each turn records `time_to_transcript_ms`, `model_latency_ms`, `tts_latency_ms`, `time_to_first_audio_ms`, `total_turn_latency_ms`, and `retrieval_latency_ms` when retrieval ran.
 
 ## Privacy
 
 - Raw microphone PCM is sent to the Pixel API over the local WebSocket, then to the configured STT provider.
+- TTS audio is generated on the API and played in the browser. Pixel does not persist raw audio, TTS bytes, or amplitude samples.
+- Microphone and playback amplitude used for mascot animation are transient (AnalyserNode); they are not stored or sent to the server.
 - Pixel does not persist raw audio or transcripts to disk in Phase 4 (in-memory session history only, bounded).
 - Logs include session/turn ids and error codes, not audio bytes or API keys.
 

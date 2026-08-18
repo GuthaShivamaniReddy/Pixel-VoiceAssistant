@@ -89,6 +89,8 @@ class ToolResult:
     name: str
     ok: bool
     detail: str = ""
+    status: str = "ok"
+    error_code: str | None = None
 
 
 @dataclass(frozen=True)
@@ -145,7 +147,7 @@ class ToolDecision:
     required: bool
     executed: bool = False
     name: str | None = None
-    reason: str = "Phase 7 tools are not implemented"
+    reason: str = "not_required"
 
 
 @dataclass

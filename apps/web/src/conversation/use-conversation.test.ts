@@ -14,8 +14,8 @@ function fakePlayback(): PlaybackEngine {
     stop() {
       /* no audio in unit tests */
     },
-    async playWav() {
-      /* resolve immediately */
+    async playWav(_wav, turnId, hooks) {
+      hooks?.onStart?.(turnId);
     },
   };
 }
@@ -36,7 +36,7 @@ function fakeCapture(): CaptureFactory {
 function fakeTurns(): TurnClient {
   const provider = new MockConversationProvider();
   return {
-    async submitText({ text, signal }) {
+    async submitText({ text, speak, signal }) {
       if (signal.aborted) {
         throw new DOMException("Aborted", "AbortError");
       }
@@ -51,7 +51,7 @@ function fakeTurns(): TurnClient {
         transcript: text,
         sources: reply.sources,
         actions: reply.actions,
-        audio: new Uint8Array([1, 2, 3, 4]).buffer,
+        audio: speak ? new Uint8Array([1, 2, 3, 4]).buffer : null,
         metrics: EMPTY_METRICS,
         voiceWarning: null,
       };
@@ -118,6 +118,22 @@ describe("useConversation", () => {
     });
     expect(result.current.draft).toBe("");
     expect(result.current.state).toBe("idle");
+  });
+
+  it("submits an explicit starter prompt without using the draft", async () => {
+    const { result } = setup();
+    act(() => {
+      result.current.setDraft("should not send");
+    });
+    await act(async () => {
+      result.current.submitText("What is Cyber Florida?");
+    });
+    await waitFor(() => {
+      expect(
+        result.current.turns.some((turn) => /florida center for cybersecurity/i.test(turn.text)),
+      ).toBe(true);
+    });
+    expect(result.current.draft).toBe("");
   });
 
   it("handles microphone denied and unavailable", async () => {
@@ -240,5 +256,23 @@ describe("useConversation", () => {
     });
     expect(hook.result.current.turns.some((turn) => turn.text.startsWith("late:"))).toBe(false);
     expect(hook.result.current.state).toBe("idle");
+  });
+
+  it("keeps the transcript when muted and skips speaking", async () => {
+    const { result } = setup();
+    act(() => {
+      result.current.toggleMute();
+    });
+    act(() => {
+      result.current.setDraft("Explain phishing.");
+    });
+    await act(async () => {
+      result.current.submitText();
+    });
+    await waitFor(() => {
+      expect(result.current.turns.some((turn) => turn.role === "pixel")).toBe(true);
+    });
+    expect(result.current.state).toBe("idle");
+    expect(result.current.muted).toBe(true);
   });
 });

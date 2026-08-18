@@ -8,14 +8,18 @@ from typing import Any
 
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from pixel.domain import InputMode, Intent
+from pixel.knowledge.registry import get_approved_source
 from pixel.orchestrator import TurnError, run_text_turn, run_voice_turn
 from pixel.orchestrator.process import OrchestratorConfig
 from pixel.orchestrator.session import ConversationSession, SessionError
 from pixel.providers import ProviderConfigError
+from pixel.security.audit import record_security_event
+from pixel.security.limits import InProcessRateLimiter, client_ip
 from pixel.shared.cancellation import CancelledError
+from pixel.tools.types import AuthContext, SourceOffer
 from pixel.voice import AudioBuffer
 from pixel_api.runtime import VoiceRuntime
 
@@ -23,9 +27,9 @@ log = logging.getLogger("pixel.api")
 
 
 class TurnRequest(BaseModel):
-    session_id: str | None = None
-    turn_id: str
-    text: str
+    session_id: str | None = Field(default=None, max_length=64)
+    turn_id: str = Field(min_length=1, max_length=128)
+    text: str = Field(max_length=8000)
     speak: bool = True
 
 
@@ -75,20 +79,96 @@ def _success_body(session: ConversationSession, result, *, include_audio: bool) 
 
 def _orchestrator_config(runtime: VoiceRuntime) -> OrchestratorConfig:
     return OrchestratorConfig(
+        max_user_chars=runtime.settings.max_user_chars,
         max_attempts=runtime.settings.llm_max_attempts,
         backoff_seconds=runtime.settings.llm_retry_backoff_seconds,
         voice_id=runtime.settings.openai_tts_voice,
+        tool_timeout_seconds=runtime.settings.tool_timeout_seconds,
+        max_tool_calls_per_turn=runtime.settings.max_tool_calls_per_turn,
+        kill_switch=runtime.settings.kill_switch(),
     )
 
 
-def _commit(session: ConversationSession, generation: int, turn_id: str, result) -> None:
+def _rate_limited(retry_after: int) -> JSONResponse:
+    return JSONResponse(
+        status_code=429,
+        headers={"Retry-After": str(retry_after)},
+        content={
+            "error": {
+                "code": "rate_limited",
+                "message": "Too many requests. Please wait and try again.",
+            }
+        },
+    )
+
+
+def _client_ip(request: Request, runtime: VoiceRuntime) -> str:
+    host = request.client.host if request.client else None
+    return client_ip(
+        host,
+        forwarded=request.headers.get("x-forwarded-for"),
+        trust_proxy=runtime.settings.trust_proxy,
+    )
+
+
+def _enforce_rate(
+    request: Request,
+    runtime: VoiceRuntime,
+    key: str,
+    limit: int,
+    *,
+    correlation_id: str = "",
+) -> JSONResponse | None:
+    if not runtime.settings.rate_limit_enabled:
+        return None
+    limiter: InProcessRateLimiter | None = getattr(request.app.state, "rate_limiter", None)
+    if limiter is None:
+        return None
+    allowed, retry_after = limiter.check(key, limit=limit)
+    if allowed:
+        return None
+    record_security_event(
+        kind="rate_limited", detail=key.split(":", 1)[0], correlation_id=correlation_id
+    )
+    return _rate_limited(retry_after)
+
+
+def _offers_from_result(result) -> tuple[SourceOffer, ...]:
+    offers: list[SourceOffer] = []
+    seen: set[str] = set()
+    rows = list(result.sources) + list(result.actions)
+    for item in rows:
+        if not isinstance(item, dict):
+            continue
+        url = item.get("url") or item.get("href") or ""
+        approved = get_approved_source(str(url))
+        if approved is None or approved.id in seen:
+            continue
+        seen.add(approved.id)
+        offers.append(
+            SourceOffer(source_id=approved.id, title=approved.title, url=approved.canonical_url)
+        )
+    return tuple(offers)
+
+
+def _auth(session: ConversationSession, turn_id: str, correlation_id: str) -> AuthContext:
+    return AuthContext(
+        permission="public",
+        session_id=session.id,
+        turn_id=turn_id,
+        correlation_id=correlation_id,
+    )
+
+
+def _commit(session: ConversationSession, generation: int, turn_id: str, result) -> bool:
     intent = Intent(result.intent) if result.intent else None
-    session.commit_turn(
+    return session.commit_turn(
         generation=generation,
         turn_id=turn_id,
         user_text=result.transcript,
         assistant_text=result.reply_text,
         intent=intent,
+        offers=_offers_from_result(result),
     )
 
 
@@ -96,13 +176,28 @@ def build_voice_router(runtime: VoiceRuntime) -> APIRouter:
     router = APIRouter()
 
     @router.post("/v1/sessions")
-    def create_session() -> JSONResponse:
+    def create_session(request: Request) -> JSONResponse:
+        blocked = _enforce_rate(
+            request,
+            runtime,
+            f"session:{_client_ip(request, runtime)}",
+            runtime.settings.rate_limit_session_per_minute,
+        )
+        if blocked is not None:
+            return blocked
         session = runtime.store.create()
         log.info("session_create session=%s", session.id)
         return JSONResponse(status_code=201, content=_session_payload(session))
 
     @router.post("/v1/sessions/{session_id}/clear")
     def clear_session(session_id: str) -> JSONResponse:
+        if len(session_id) > 64:
+            return JSONResponse(
+                status_code=400,
+                content=_public_error(
+                    "invalid_input", "That conversation was not found. Start again."
+                ),
+            )
         try:
             session = runtime.store.clear(session_id)
         except SessionError as exc:
@@ -114,6 +209,26 @@ def build_voice_router(runtime: VoiceRuntime) -> APIRouter:
     @router.post("/v1/turns")
     async def create_turn(payload: TurnRequest, request: Request) -> JSONResponse:
         correlation_id = getattr(request.state, "correlation_id", "")
+        ip = _client_ip(request, runtime)
+        blocked = _enforce_rate(
+            request,
+            runtime,
+            f"turn:{ip}",
+            runtime.settings.rate_limit_turn_per_minute,
+            correlation_id=str(correlation_id),
+        )
+        if blocked is not None:
+            return blocked
+        if payload.session_id:
+            blocked = _enforce_rate(
+                request,
+                runtime,
+                f"turn-session:{payload.session_id}",
+                runtime.settings.rate_limit_turn_per_session_per_minute,
+                correlation_id=str(correlation_id),
+            )
+            if blocked is not None:
+                return blocked
         try:
             session = runtime.session(payload.session_id)
         except SessionError as exc:
@@ -135,6 +250,8 @@ def build_voice_router(runtime: VoiceRuntime) -> APIRouter:
                 voice_id=runtime.settings.openai_tts_voice,
                 config=_orchestrator_config(runtime),
                 retriever=runtime.retriever,
+                last_offers=tuple(session.last_offers),
+                auth=_auth(session, payload.turn_id, correlation_id),
             )
         except CancelledError:
             return JSONResponse(
@@ -162,7 +279,10 @@ def build_voice_router(runtime: VoiceRuntime) -> APIRouter:
             return JSONResponse(
                 status_code=409, content=_public_error("cancelled", "Turn cancelled.")
             )
-        _commit(session, generation, payload.turn_id, result)
+        if not _commit(session, generation, payload.turn_id, result):
+            return JSONResponse(
+                status_code=409, content=_public_error("cancelled", "Turn cancelled.")
+            )
         log.info(
             "turn_complete correlation=%s session=%s turn=%s intent=%s status=%s",
             correlation_id,
@@ -180,9 +300,26 @@ def build_voice_router(runtime: VoiceRuntime) -> APIRouter:
     async def realtime(websocket: WebSocket) -> None:
         origin = websocket.headers.get("origin")
         allowed = set(runtime.settings.cors_origin_list())
+        if runtime.settings.pixel_env == "production" and not origin:
+            await websocket.close(code=1008)
+            return
         if origin and origin not in allowed:
             await websocket.close(code=1008)
             return
+        limiter: InProcessRateLimiter | None = getattr(websocket.app.state, "rate_limiter", None)
+        if runtime.settings.rate_limit_enabled and limiter is not None:
+            host = websocket.client.host if websocket.client else None
+            ip = client_ip(
+                host,
+                forwarded=websocket.headers.get("x-forwarded-for"),
+                trust_proxy=runtime.settings.trust_proxy,
+            )
+            allowed_ws, _retry = limiter.check(
+                f"ws:{ip}", limit=runtime.settings.rate_limit_ws_per_minute
+            )
+            if not allowed_ws:
+                await websocket.close(code=1013)
+                return
         await websocket.accept()
         session = runtime.store.create()
         try:
@@ -198,6 +335,15 @@ def build_voice_router(runtime: VoiceRuntime) -> APIRouter:
                     continue
                 text = message.get("text")
                 if not text:
+                    continue
+                if len(text) > runtime.settings.max_ws_control_bytes:
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "code": "payload_too_large",
+                            "message": "That request is too large.",
+                        }
+                    )
                     continue
                 try:
                     payload = json.loads(text)
@@ -285,6 +431,8 @@ async def _finish_voice_turn(
             voice_id=runtime.settings.openai_tts_voice,
             config=_orchestrator_config(runtime),
             retriever=runtime.retriever,
+            last_offers=tuple(session.last_offers),
+            auth=_auth(session, turn_id, ""),
         )
     except CancelledError:
         await websocket.send_json({"type": "cancelled", "turn_id": turn_id})
@@ -307,7 +455,9 @@ async def _finish_voice_turn(
     if active.cancellation.is_cancelled():
         await websocket.send_json({"type": "cancelled", "turn_id": turn_id})
         return
-    _commit(session, active.generation, turn_id, result)
+    if not _commit(session, active.generation, turn_id, result):
+        await websocket.send_json({"type": "cancelled", "turn_id": turn_id})
+        return
     await websocket.send_json(
         {"type": "final_transcript", "turn_id": turn_id, "text": result.transcript}
     )

@@ -14,8 +14,8 @@ ADRs record choices that later phases must not silently reverse.
 | [0008](0008-orchestrator-boundary.md) | Central `process_turn` orchestrator; versioned server policy | Accepted |
 | [0009](0009-conversation-state.md) | Bounded in-memory sessions with TTL and clear | Accepted |
 | [0010](0010-intent-routing.md) | Deterministic six-intent taxonomy | Accepted |
-| [0011](0011-knowledge-rag.md) | Fixture corpus, hash embeddings, no rerank for Phase 6 | Accepted |
+| [0012](0012-tools.md) | Server-side tool registry; model cannot execute tools | Accepted |
 
 Template: [adr-template.md](adr-template.md).
 
-**Reality check:** Phases 2–6 are implemented in the working tree. Production tools are not implemented.
+**Reality check:** Phases 2–7 are implemented. Phase 8 hardening is not.

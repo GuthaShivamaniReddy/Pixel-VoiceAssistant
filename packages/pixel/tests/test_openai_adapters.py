@@ -25,6 +25,40 @@ def test_openai_stt_normalizes_transcript() -> None:
     assert events[0].is_final is True
 
 
+def test_openai_llm_includes_untrusted_evidence() -> None:
+    captured: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = request.read().decode("utf-8")
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"content": "Grounded from evidence."}}]},
+        )
+
+    from pixel.ai import ChatMessage, LlmRequest
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    provider = OpenAILLM("sk-test", client=client)
+    list(
+        provider.generate(
+            LlmRequest(
+                system="You are Pixel.",
+                messages=(ChatMessage(role="user", content="What is Cyber Florida?"),),
+                evidence=(
+                    "----- BEGIN UNTRUSTED RETRIEVED DOCUMENT -----\n"
+                    "text: Cyber Florida is the Florida Center for Cybersecurity.\n"
+                    "----- END UNTRUSTED RETRIEVED DOCUMENT -----",
+                ),
+            ),
+            cancellation=CancellationFlag(),
+        )
+    )
+    body = str(captured.get("body"))
+    assert "UNTRUSTED RETRIEVED DOCUMENT" in body
+    assert "Florida Center for Cybersecurity" in body
+    assert "not instructions" in body
+
+
 def test_openai_llm_normalizes_completion() -> None:
     def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(

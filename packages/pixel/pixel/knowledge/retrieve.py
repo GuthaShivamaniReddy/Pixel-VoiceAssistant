@@ -121,7 +121,8 @@ class KnowledgeRetriever:
         search_ms = 0
         limit = top_k or self.top_k
         floor = min_score if min_score is not None else self.min_score
-        access = access_class or self.access_class
+        access = self.access_class
+        del access_class
         for item in queries:
             embedding = tuple(float(value) for value in self.embedder.embed_query(item))
             hits = self.store.search(

@@ -38,7 +38,7 @@ export type ConversationController = {
   setDraft: (value: string) => void;
   startListening: () => Promise<void>;
   stopListening: (transcript?: string) => void;
-  submitText: () => void;
+  submitText: (text?: string) => void;
   cancel: () => void;
   stopSpeaking: () => void;
   toggleMute: () => void;
@@ -48,6 +48,7 @@ export type ConversationController = {
   confirmClear: () => void;
   closeClearDialog: () => void;
   clearDialogOpen: boolean;
+  micStream: MediaStream | null;
 };
 
 type Options = {
@@ -57,6 +58,7 @@ type Options = {
   realtime?: RealtimeClient;
   capture?: CaptureFactory;
   playback?: PlaybackEngine;
+  onSpeechLevel?: (level: number) => void;
 };
 
 const ERROR_CODES: ReadonlySet<string> = new Set([
@@ -102,6 +104,7 @@ export function useConversation(options: Options = {}): ConversationController {
   const [turns, setTurns] = useState<ConversationTurn[]>([]);
   const [draft, setDraft] = useState("");
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [micStream, setMicStream] = useState<MediaStream | null>(null);
 
   const sessionId = useRef<string | null>(null);
   const activeTurnId = useRef<string | null>(null);
@@ -109,10 +112,15 @@ export function useConversation(options: Options = {}): ConversationController {
   const abortRef = useRef<AbortController | null>(null);
   const mutedRef = useRef(false);
   const realtimeReady = useRef(false);
+  const speechLevelRef = useRef(options.onSpeechLevel);
 
   useEffect(() => {
     mutedRef.current = muted;
   }, [muted]);
+
+  useEffect(() => {
+    speechLevelRef.current = options.onSpeechLevel;
+  }, [options.onSpeechLevel]);
 
   const dispatch = useCallback((event: ConversationEvent) => {
     setState((current) => reduceState(current, event));
@@ -128,6 +136,7 @@ export function useConversation(options: Options = {}): ConversationController {
   const stopCapture = useCallback(() => {
     const handle = captureHandle.current;
     captureHandle.current = null;
+    setMicStream(null);
     microphone.release();
     return handle?.stop() ?? { pcm: new Int16Array(0), sampleRate: 16000 };
   }, [microphone]);
@@ -138,6 +147,7 @@ export function useConversation(options: Options = {}): ConversationController {
       abortRef.current?.abort();
       abortRef.current = null;
       playback.stop();
+      speechLevelRef.current?.(0);
       if (sendCancel && turnId) {
         realtime.cancel(turnId);
       }
@@ -169,6 +179,53 @@ export function useConversation(options: Options = {}): ConversationController {
     [trimTurns],
   );
 
+  const finishWithoutSpeech = useCallback(
+    (turnId: string, warning: string | null = null) => {
+      if (activeTurnId.current !== turnId) {
+        return;
+      }
+      speechLevelRef.current?.(0);
+      dispatch({ type: "SPEAKING_DONE" });
+      if (warning === "tts_failure") {
+        setErrorCode("tts_failure");
+      }
+      activeTurnId.current = null;
+    },
+    [dispatch],
+  );
+
+  const playTurnAudio = useCallback(
+    async (turnId: string, audio: ArrayBuffer) => {
+      if (activeTurnId.current !== turnId || mutedRef.current) {
+        finishWithoutSpeech(turnId);
+        return;
+      }
+      try {
+        await playback.playWav(audio, turnId, {
+          onStart(startedTurn) {
+            if (activeTurnId.current === startedTurn) {
+              dispatch({ type: "RESPONSE_READY" });
+            }
+          },
+          onLevel(level) {
+            speechLevelRef.current?.(level);
+          },
+        });
+      } catch {
+        speechLevelRef.current?.(0);
+        if (activeTurnId.current === turnId) {
+          setErrorCode("playback_failure");
+        }
+      }
+      speechLevelRef.current?.(0);
+      if (activeTurnId.current === turnId) {
+        dispatch({ type: "SPEAKING_DONE" });
+        activeTurnId.current = null;
+      }
+    },
+    [dispatch, finishWithoutSpeech, playback],
+  );
+
   const applyAssistant = useCallback(
     async (
       turnId: string,
@@ -190,34 +247,19 @@ export function useConversation(options: Options = {}): ConversationController {
         actions,
         metrics,
       });
-      dispatch({ type: "RESPONSE_READY" });
       if (voiceWarning === "tts_failure") {
-        dispatch({ type: "SPEAKING_DONE" });
-        setErrorCode("tts_failure");
-        activeTurnId.current = null;
+        finishWithoutSpeech(turnId, "tts_failure");
         return;
       }
-      if (mutedRef.current) {
-        dispatch({ type: "SPEAKING_DONE" });
-        activeTurnId.current = null;
-        return;
-      }
-      if (!audio) {
-        return;
-      }
-      try {
-        await playback.playWav(audio, turnId);
-      } catch {
-        if (activeTurnId.current === turnId) {
-          setErrorCode("playback_failure");
+      if (mutedRef.current || !audio) {
+        if (mutedRef.current || voiceWarning) {
+          finishWithoutSpeech(turnId);
         }
+        return;
       }
-      if (activeTurnId.current === turnId) {
-        dispatch({ type: "SPEAKING_DONE" });
-        activeTurnId.current = null;
-      }
+      await playTurnAudio(turnId, audio);
     },
-    [appendTurn, dispatch, playback],
+    [appendTurn, finishWithoutSpeech, playTurnAudio],
   );
 
   const runTextTurn = useCallback(
@@ -312,22 +354,10 @@ export function useConversation(options: Options = {}): ConversationController {
         );
       },
       onAudio(turnId, wav) {
-        if (activeTurnId.current !== turnId || mutedRef.current) {
+        if (activeTurnId.current !== turnId) {
           return;
         }
-        void (async () => {
-          try {
-            await playback.playWav(wav, turnId);
-          } catch {
-            if (activeTurnId.current === turnId) {
-              setErrorCode("playback_failure");
-            }
-          }
-          if (activeTurnId.current === turnId) {
-            dispatch({ type: "SPEAKING_DONE" });
-            activeTurnId.current = null;
-          }
-        })();
+        void playTurnAudio(turnId, wav);
       },
       onMetrics(turnId, metrics) {
         if (activeTurnId.current !== turnId) {
@@ -341,9 +371,8 @@ export function useConversation(options: Options = {}): ConversationController {
         if (activeTurnId.current !== turnId) {
           return;
         }
-        if (mutedRef.current) {
-          dispatch({ type: "SPEAKING_DONE" });
-          activeTurnId.current = null;
+        if (mutedRef.current || playback.activeTurnId !== turnId) {
+          finishWithoutSpeech(turnId);
         }
       },
       onCancelled(turnId) {
@@ -359,7 +388,7 @@ export function useConversation(options: Options = {}): ConversationController {
       },
     });
     realtimeReady.current = true;
-  }, [applyAssistant, dispatch, fail, playback, realtime, trimTurns]);
+  }, [applyAssistant, fail, finishWithoutSpeech, playTurnAudio, playback, realtime, trimTurns]);
 
   const startListening = useCallback(async () => {
     if (state === "listening") {
@@ -392,10 +421,12 @@ export function useConversation(options: Options = {}): ConversationController {
     try {
       captureHandle.current = await capture.start(stream, audioContext ?? undefined);
     } catch {
+      setMicStream(null);
       microphone.release();
       fail("capture_failure");
       return;
     }
+    setMicStream(stream);
     dispatch({ type: "START_LISTENING" });
   }, [abortActive, capture, dispatch, fail, microphone, state]);
 
@@ -447,16 +478,19 @@ export function useConversation(options: Options = {}): ConversationController {
     [dispatch, ensureRealtime, fail, realtime, runTextTurn, state, stopCapture],
   );
 
-  const submitText = useCallback(() => {
-    const text = draft.trim();
-    if (!text || state === "processing" || state === "listening" || state === "speaking") {
-      return;
-    }
-    setDraft("");
-    setCancelled(false);
-    setErrorCode(null);
-    void runTextTurn(text);
-  }, [draft, runTextTurn, state]);
+  const submitText = useCallback(
+    (text?: string) => {
+      const next = (text ?? draft).trim();
+      if (!next || state === "processing" || state === "listening" || state === "speaking") {
+        return;
+      }
+      setDraft("");
+      setCancelled(false);
+      setErrorCode(null);
+      void runTextTurn(next);
+    },
+    [draft, runTextTurn, state],
+  );
 
   const cancel = useCallback(() => {
     abortActive(true);
@@ -535,5 +569,6 @@ export function useConversation(options: Options = {}): ConversationController {
     confirmClear,
     closeClearDialog: () => setClearDialogOpen(false),
     clearDialogOpen,
+    micStream,
   };
 }

@@ -1,6 +1,6 @@
 # Testing strategy
 
-**Current test status (Phases 2–6):** Python pytest (API/orchestrator/knowledge/providers), Vitest (web), Playwright Chromium E2E for text, voice PTT, barge-in, follow-ups, clear, and injection. Knowledge eval scores Hit@k, groundedness, citations, abstention, and freshness against the fixture corpus. CI runs format, lint, typecheck, tests, build, Playwright, and dependency scans.
+**Current test status (Phases 2–9):** Python pytest (API/orchestrator/knowledge/providers/security), Vitest (web), Playwright Chromium E2E for text, starters, keyboard send, mobile layout, voice PTT, barge-in, follow-ups, clear, injection, tool navigation, and warning UX. CI runs format, lint, typecheck, tests, build, Playwright, pip-audit, npm audit, and the in-repo secret-marker scan.
 
 ## Layers (required before production)
 
@@ -12,7 +12,7 @@
 | End-to-end | Browser text + mocked listen/stop, error recovery, source cards | Yes |
 | Voice quality | Domain terms, silence, interrupt | Partial (Playwright PTT + barge-in; live vendor STT not verified) |
 | RAG eval | Hit rate, groundedness, abstention, freshness | Yes (fixture corpus) |
-| Safety / red-team | Injection, prompt leak, tool abuse, harmful cyber | Fixtures + retrieval injection test; live model not scored |
+| Safety / red-team | Injection, prompt leak, tool abuse, harmful cyber, rate limits, redaction, admin authz | Yes (unit/API; live vendor model not scored) |
 | Performance | Concurrent sessions, stage latency | Partial (per-turn timings including retrieval) |
 | Accessibility | Keyboard, labels, transcript, contrast | Partial (unit + labels; no axe suite) |
 | UAT | Real user tasks | No |

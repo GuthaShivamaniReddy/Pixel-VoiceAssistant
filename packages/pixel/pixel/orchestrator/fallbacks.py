@@ -18,8 +18,8 @@ UNSAFE_REFUSAL = (
 CLARIFY = "Tell me which Cyber Florida or defensive cybersecurity topic you mean so I do not guess."
 
 NAVIGATION = (
-    "I can point you to Cyber Florida's public website. I cannot open pages or run tools "
-    "in your browser. Use the official site for current programs and pages."
+    "Tell me which approved Cyber Florida page you mean so I do not guess. "
+    "I only offer official cyberflorida.org links."
 )
 
 EMPTY_REPLY = "I did not have a reply to show. Try another question."

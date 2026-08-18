@@ -1,7 +1,19 @@
+export type PlaybackHooks = {
+  onStart?: (turnId: string) => void;
+  onLevel?: (level: number) => void;
+};
+
 export type PlaybackEngine = {
-  playWav: (wav: ArrayBuffer, turnId: string) => Promise<void>;
+  playWav: (wav: ArrayBuffer, turnId: string, hooks?: PlaybackHooks) => Promise<void>;
   stop: () => void;
   readonly activeTurnId: string | null;
+};
+
+type AnalyserLike = {
+  fftSize: number;
+  smoothingTimeConstant: number;
+  getByteTimeDomainData: (data: Uint8Array) => void;
+  connect: (node: unknown) => void;
 };
 
 type AudioContextCtor = {
@@ -14,6 +26,7 @@ type AudioContextCtor = {
       stop: () => void;
       onended: (() => void) | null;
     };
+    createAnalyser: () => AnalyserLike;
     destination: unknown;
     close: () => Promise<void>;
     state: string;
@@ -21,11 +34,22 @@ type AudioContextCtor = {
   };
 };
 
+function rms(bytes: Uint8Array): number {
+  let sum = 0;
+  for (const value of bytes) {
+    const centered = (value - 128) / 128;
+    sum += centered * centered;
+  }
+  return Math.sqrt(sum / bytes.length);
+}
+
 export function createBrowserPlayback(): PlaybackEngine {
   let context: InstanceType<AudioContextCtor> | null = null;
   let source: ReturnType<InstanceType<AudioContextCtor>["createBufferSource"]> | null = null;
   let activeTurnId: string | null = null;
   let generation = 0;
+  let levelFrame = 0;
+  let levelHook: PlaybackHooks["onLevel"] | undefined;
 
   function ensureContext() {
     if (context) {
@@ -41,6 +65,15 @@ export function createBrowserPlayback(): PlaybackEngine {
     return context;
   }
 
+  function clearLevel() {
+    if (levelFrame) {
+      window.cancelAnimationFrame(levelFrame);
+      levelFrame = 0;
+    }
+    levelHook?.(0);
+    levelHook = undefined;
+  }
+
   return {
     get activeTurnId() {
       return activeTurnId;
@@ -48,6 +81,7 @@ export function createBrowserPlayback(): PlaybackEngine {
     stop() {
       generation += 1;
       activeTurnId = null;
+      clearLevel();
       try {
         source?.stop();
       } catch {
@@ -55,9 +89,10 @@ export function createBrowserPlayback(): PlaybackEngine {
       }
       source = null;
     },
-    async playWav(wav, turnId) {
+    async playWav(wav, turnId, hooks) {
       const token = generation;
       activeTurnId = turnId;
+      levelHook = hooks?.onLevel;
       const audioContext = ensureContext();
       if (audioContext.state === "suspended") {
         await audioContext.resume();
@@ -77,8 +112,29 @@ export function createBrowserPlayback(): PlaybackEngine {
         }
         const next = audioContext.createBufferSource();
         next.buffer = buffer;
-        next.connect(audioContext.destination);
+        try {
+          const analyser = audioContext.createAnalyser();
+          analyser.fftSize = 256;
+          analyser.smoothingTimeConstant = 0.55;
+          next.connect(analyser);
+          analyser.connect(audioContext.destination);
+          const samples = new Uint8Array(analyser.fftSize);
+          const tick = () => {
+            if (token !== generation) {
+              return;
+            }
+            analyser.getByteTimeDomainData(samples);
+            levelHook?.(Math.min(1, rms(samples) * 2.6));
+            levelFrame = window.requestAnimationFrame(tick);
+          };
+          levelFrame = window.requestAnimationFrame(tick);
+        } catch {
+          next.connect(audioContext.destination);
+        }
         next.onended = () => {
+          if (token === generation) {
+            clearLevel();
+          }
           if (activeTurnId === turnId) {
             activeTurnId = null;
           }
@@ -86,8 +142,10 @@ export function createBrowserPlayback(): PlaybackEngine {
         };
         source = next;
         try {
+          hooks?.onStart?.(turnId);
           next.start();
         } catch (error) {
+          clearLevel();
           reject(error);
         }
       });
@@ -96,7 +154,7 @@ export function createBrowserPlayback(): PlaybackEngine {
 }
 
 export function createQueuePlayback(engine: PlaybackEngine): PlaybackEngine {
-  let queue: Array<{ turnId: string; wav: ArrayBuffer }> = [];
+  let queue: Array<{ turnId: string; wav: ArrayBuffer; hooks?: PlaybackHooks }> = [];
   let running = false;
   let activeTurnId: string | null = null;
 
@@ -113,7 +171,7 @@ export function createQueuePlayback(engine: PlaybackEngine): PlaybackEngine {
       if (item.turnId !== activeTurnId) {
         continue;
       }
-      await engine.playWav(item.wav, item.turnId);
+      await engine.playWav(item.wav, item.turnId, item.hooks);
     }
     running = false;
   }
@@ -127,12 +185,12 @@ export function createQueuePlayback(engine: PlaybackEngine): PlaybackEngine {
       activeTurnId = null;
       engine.stop();
     },
-    async playWav(wav, turnId) {
+    async playWav(wav, turnId, hooks) {
       if (activeTurnId && activeTurnId !== turnId) {
         this.stop();
       }
       activeTurnId = turnId;
-      queue.push({ turnId, wav });
+      queue.push({ turnId, wav, hooks });
       await drain();
     },
   };

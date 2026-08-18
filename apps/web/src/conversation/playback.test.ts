@@ -9,7 +9,8 @@ function recordingEngine(): PlaybackEngine & { played: string[] } {
     stop() {
       played.push("stop");
     },
-    async playWav(_wav, turnId) {
+    async playWav(_wav, turnId, hooks) {
+      hooks?.onStart?.(turnId);
       played.push(`play:${turnId}`);
     },
   };
@@ -31,5 +32,17 @@ describe("playback queue", () => {
     await queue.playWav(new ArrayBuffer(4), "a");
     await queue.playWav(new ArrayBuffer(4), "b");
     expect(engine.played.filter((item) => item.startsWith("play:"))).toEqual(["play:a", "play:b"]);
+  });
+
+  it("forwards start hooks only for the active turn", async () => {
+    const started: string[] = [];
+    const engine = recordingEngine();
+    const queue = createQueuePlayback(engine);
+    await queue.playWav(new ArrayBuffer(4), "live", {
+      onStart(turnId) {
+        started.push(turnId);
+      },
+    });
+    expect(started).toEqual(["live"]);
   });
 });

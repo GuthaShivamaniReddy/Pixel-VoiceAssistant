@@ -28,7 +28,7 @@ export const ERROR_COPY: Record<ErrorCode, { title: string; detail: string }> = 
   },
   generic: {
     title: "Something went wrong",
-    detail: "Pixel hit a problem. You can try again or return to idle and use text.",
+    detail: "Pixel hit a problem. You can try again or return to ready and use text.",
   },
   stt_failure: {
     title: "Could not transcribe",

@@ -19,7 +19,7 @@ export function RecommendedAction({ action }: RecommendedActionProps) {
       href={action.href}
       rel="noreferrer noopener"
       target="_blank"
-      aria-label={`${action.label} (opens in a new tab)`}
+      aria-label={`${action.label} (opens ${new URL(action.href).hostname} in a new tab)`}
     >
       {action.label}
     </a>

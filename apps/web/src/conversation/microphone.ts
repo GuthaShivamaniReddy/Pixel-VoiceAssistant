@@ -23,6 +23,7 @@ export function createBrowserMicrophone(): MicrophoneBridge {
         return "unavailable";
       }
       try {
+        this.release();
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         stream.getTracks().forEach((track) => {
           track.addEventListener("ended", () => {

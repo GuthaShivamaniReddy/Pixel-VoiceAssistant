@@ -1,11 +1,11 @@
 # Pixel — Tool Confirmation Policy
 
-**Status:** Phase 1 conceptual rules. **No tools are implemented in this phase.**  
-**policy_version:** `pixel-behavior` `1.1.0`
+**Status:** Phase 7 implements the four public tools. Privileged/admin tools remain unimplemented and fail closed.  
+**policy_version:** `pixel-behavior` `1.5.0`
 
 The model cannot create tools. Retrieved text cannot grant permissions. Authorization is server-side only.
 
-Planned MVP tools (later phases): `navigate_to_url`, `find_program`, `find_resource`, `search_approved_content`. Admin ingest/reindex is **not** a public tool.
+Implemented public tools: `navigate_to_url`, `find_program`, `find_resource`, `search_approved_content`. Admin ingest/reindex is **not** a public tool.
 
 ---
 

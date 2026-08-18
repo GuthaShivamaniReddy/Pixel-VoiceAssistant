@@ -185,7 +185,7 @@ Orchestrator proposes tool name + arguments
   → never raw privileged payloads to the model or browser
 ```
 
-MVP tools (later phase): `navigate_to_url` (domain allowlist), `find_program`, `find_resource`, `search_approved_content`. No generic HTTP tool.
+Phase 7 tools: `navigate_to_url` (registered canonical HTTPS URLs only), `find_program`, `find_resource`, `search_approved_content`. No generic HTTP, shell, or database tool.
 
 ---
 

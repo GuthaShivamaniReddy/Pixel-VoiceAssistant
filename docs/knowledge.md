@@ -59,7 +59,7 @@ Do not change embedding model/dimensions without rebuilding the index. Vendor SD
 
 ## Vector storage
 
-- **Default:** in-memory store seeded from fixtures at API start (`fixture_retriever()`), so text/voice work without Docker.
+- **Default:** in-memory store seeded from fixtures at API start (`fixture_retriever()`), so text/voice work without Docker. `KNOWLEDGE_STORE` and `EMBEDDING_PROVIDER` are documented for operators; the API process still uses the fixture index unless a future runtime switch is wired. Do not assume Postgres is queried because the env var is set.
 - **Postgres + pgvector:** tables `knowledge_sources`, `knowledge_documents`, `knowledge_chunks` (`vector(1536)`). Migration: `pixel.knowledge.migrate.upgrade`. IVFFlat is **not** used yet (empty/small corpus). Metadata indexes: `(active, access_class)`, `source_id`.
 
 Reranking is **not used**. Baseline retrieval is cosine similarity + `top_k` + `min_score`. Add rerank only if evaluation shows a real gain.

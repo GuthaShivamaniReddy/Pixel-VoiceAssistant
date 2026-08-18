@@ -38,6 +38,34 @@ def test_inactive_source_is_not_retrieved() -> None:
     assert all(chunk.source_id != "cf-firstline" for chunk in hits.chunks)
 
 
+def test_caller_cannot_override_access_class_to_internal() -> None:
+    store = InMemoryKnowledgeStore()
+    embedder = HashEmbeddingProvider()
+    ingest_fixtures(embedder=embedder, store=store)
+    retriever = KnowledgeRetriever(store, embedder)
+    sample = next(iter(store.chunks.values()))
+    privileged = replace(
+        sample,
+        chunk_id="internal-bypass",
+        source_id="cf-internal",
+        access_class="internal",
+        content="Internal privileged Cyber Florida budget figure 999",
+        active=True,
+    )
+    store.chunks[privileged.chunk_id] = privileged
+    hits = retriever.retrieve(
+        "Internal privileged Cyber Florida budget figure",
+        access_class="internal",
+    )
+    assert all(chunk.access_class == "public" for chunk in hits.chunks)
+    assert all(chunk.chunk_id != "internal-bypass" for chunk in hits.chunks)
+
+
+def test_suspicious_sql_shaped_query_does_not_break_retrieval() -> None:
+    hits = _retriever().retrieve("What is FirstLine'; DROP TABLE knowledge_chunks; --")
+    assert hits.reason in {"ok", "no_acceptable_evidence", "insufficient_evidence"}
+
+
 def test_privileged_chunks_are_not_mixed_into_public_search() -> None:
     store = InMemoryKnowledgeStore()
     embedder = HashEmbeddingProvider()

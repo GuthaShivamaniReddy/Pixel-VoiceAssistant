@@ -21,9 +21,18 @@ def register_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error_handler(_request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        if exc.status_code == 404:
+            message = "Not found"
+            code = "not_found"
+        elif exc.status_code == 405:
+            message = "Method not allowed"
+            code = "method_not_allowed"
+        else:
+            message = "Request failed"
+            code = "http_error"
         return JSONResponse(
             status_code=exc.status_code,
-            content={"error": {"code": "http_error", "message": str(exc.detail)}},
+            content={"error": {"code": code, "message": message}},
         )
 
     @app.exception_handler(Exception)

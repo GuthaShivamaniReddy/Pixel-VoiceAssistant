@@ -1,7 +1,7 @@
 # Pixel — Security
 
 **Canonical folder:** `docs/security/`  
-**Document status:** Target controls. Phase 2 implemented CORS allowlisting, admin fail-closed, and rejection of secret-shaped `NEXT_PUBLIC_*` keys. Most SEC-* / PRIV-* controls are still planned. There is a runtime skeleton, not a production security program.
+**Document status:** Phase 8 implemented CORS allowlisting, admin fail-closed (token required), rate limits, request size limits, security headers/CSP, log redaction, kill switches, and security tests. Institutional SSO, distributed rate limits, and approved privacy wording remain deferred.
 
 References: OWASP Top 10 for LLM Applications, NIST AI RMF, WCAG 2.2 (a11y adjacent), `REQUIREMENTS.md` SEC-* / PRIV-*.
 
@@ -239,8 +239,8 @@ Escalation: direct users to official reporting channels when they describe crime
 | Policy layer + output validation hooks | Phase 5 |
 | Untrusted RAG wrapping | Phase 6 |
 | Tool allowlist + audit | Phase 7 |
-| Full threat model tests, CSP, rate limits, redaction | Phase 8 |
-| Dashboards / kill switches | Phase 10 |
+| Full threat model tests, CSP, rate limits, redaction | Phase 8 (implemented; live-model red-team scoring still Phase 11) |
+| Dashboards / kill-switch UI | Phase 10 (env kill switches exist in Phase 8) |
 | Red-team eval gate | Phase 11 |
 
 Phase 0 does not implement these controls; it makes later phases non-optional.

@@ -1,7 +1,7 @@
 # Pixel — Architecture
 
 **Canonical path:** `docs/architecture.md` (same file as `ARCHITECTURE.md` on Windows).  
-**Document status:** Target architecture plus implemented Phase 4 voice loop (`docs/voice.md`), Phase 5 orchestrator (`docs/orchestrator.md`), and Phase 6 knowledge/RAG (`docs/knowledge.md`). Production tools are not implemented.
+**Document status:** Target architecture plus implemented Phase 4 voice loop (`docs/voice.md`), Phase 5 orchestrator (`docs/orchestrator.md`), Phase 6 knowledge/RAG (`docs/knowledge.md`), Phase 7 tools (`docs/tools.md`), and Phase 8 security (`docs/security/`).
 
 This file describes the **intended** platform. Do not read any diagram below as a running system.
 
@@ -274,7 +274,7 @@ Evaluated against an **empty repository** (`REPOSITORY_ASSESSMENT.md`). No exist
 | **Disadvantages** | Heavier than a pure SPA; must keep provider keys out of client bundles |
 | **Migration difficulty** | Medium if leaving React; low if staying on React (Vite) |
 
-Styling: Tailwind CSS for speed and consistent spacing; Cyber Florida visual identity applied in Phase 9, not as a blocker for the state machine.
+Styling: CSS design tokens in `apps/web/src/app/globals.css` (Cyber Florida greens, dark page, light conversation surface). Pixel mascot CSS lives in `apps/web/src/mascot/mascot.css`.
 
 ### 6.2 Backend — Python FastAPI
 

@@ -31,17 +31,11 @@ export function ApiHealth() {
 
   if (error) {
     return (
-      <p role="status">
-        API health: unavailable ({error}). Start the API on {base}.
-      </p>
+      <p role="status">API unavailable. Start the Pixel API on {base} if you need live answers.</p>
     );
   }
   if (!health) {
-    return <p role="status">Checking API health…</p>;
+    return <p className="muted">Checking API connection…</p>;
   }
-  return (
-    <p role="status">
-      API health: {health.status} ({health.service}, env={health.env})
-    </p>
-  );
+  return <p className="muted">Connected to Pixel API ({health.env ?? "local"}).</p>;
 }

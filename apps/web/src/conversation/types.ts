@@ -89,9 +89,9 @@ export type ConversationEvent =
 export const MAX_TURNS = 40;
 
 export const STATE_LABEL: Record<PixelState, string> = {
-  idle: "Idle — Pixel is ready",
+  idle: "Ready — Pixel is not listening",
   listening: "Listening — microphone is on",
-  processing: "Processing — Pixel is preparing a reply",
+  processing: "Thinking — Pixel is preparing a reply",
   speaking: "Speaking — Pixel is delivering a reply",
   error: "Error — Pixel needs a recovery action",
   permission_denied: "Microphone permission denied — use text instead",

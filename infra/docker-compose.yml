@@ -27,6 +27,7 @@ services:
       CORS_ORIGINS: http://localhost:3000
       DATABASE_URL: postgresql://pixel:pixel_dev_only@db:5432/pixel
       ADMIN_ENABLED: "false"
+      ADMIN_TOKEN: ""
       LLM_PROVIDER: mock
       STT_PROVIDER: mock
       TTS_PROVIDER: mock

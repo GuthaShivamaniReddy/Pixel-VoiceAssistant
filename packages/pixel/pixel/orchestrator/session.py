@@ -19,6 +19,7 @@ from pixel.domain import (
 )
 from pixel.orchestrator.policy import POLICY_VERSION
 from pixel.shared.cancellation import CancellationFlag
+from pixel.tools.types import SourceOffer
 
 MAX_MESSAGES = 8
 MAX_SESSIONS = 500
@@ -51,6 +52,7 @@ class ConversationSession:
     capabilities: SessionCapabilities = field(default_factory=SessionCapabilities)
     messages: list[Message] = field(default_factory=list)
     last_intent: Intent | None = None
+    last_offers: list[SourceOffer] = field(default_factory=list)
     generation: int = 0
     active: ActiveTurn | None = None
     policy_version: str = POLICY_VERSION
@@ -74,6 +76,7 @@ class ConversationSession:
     def clear_context(self) -> None:
         self.messages.clear()
         self.last_intent = None
+        self.last_offers.clear()
         self.touch()
 
     def commit_turn(
@@ -84,6 +87,7 @@ class ConversationSession:
         user_text: str,
         assistant_text: str,
         intent: Intent | None,
+        offers: tuple[SourceOffer, ...] = (),
     ) -> bool:
         if generation != self.generation:
             return False
@@ -110,6 +114,8 @@ class ConversationSession:
         if len(self.messages) > MAX_MESSAGES:
             self.messages = self.messages[-MAX_MESSAGES:]
         self.last_intent = intent
+        if offers:
+            self.last_offers = list(offers)[:8]
         self.touch()
         return True
 

@@ -5,6 +5,7 @@ from pixel.orchestrator.process import OrchestratorConfig, process_turn
 from pixel.orchestrator.session import SessionStore
 from pixel.providers.errors import ProviderError
 from pixel.providers.mock import MockLLM, MockSpeechToText, MockTextToSpeech
+from pixel.security.kill_switch import KillSwitch
 from pixel.shared.cancellation import CancellationFlag
 from pixel.voice import AudioBuffer
 from pixel.voice.audio import sine_pcm16
@@ -248,3 +249,64 @@ def test_process_turn_is_the_text_entry_point() -> None:
     )
     assert outcome.response.intent == Intent.cybersecurity_help
     assert outcome.response.text
+
+
+class _RecordingTts(MockTextToSpeech):
+    def __init__(self) -> None:
+        self.spoken: list[str] = []
+
+    def synthesize(self, text, *, voice_id, cancellation):  # type: ignore[no-untyped-def]
+        self.spoken.append(text)
+        yield from super().synthesize(text, voice_id=voice_id, cancellation=cancellation)
+
+
+def test_tts_speaks_grounded_text_without_urls() -> None:
+    tts = _RecordingTts()
+    result = run_text_turn(
+        text="What is a program that does not exist at Cyber Florida xyzzy?",
+        llm=MockLLM(),
+        tts=tts,
+        cancellation=CancellationFlag(),
+        config=OrchestratorConfig(max_attempts=1, backoff_seconds=0),
+    )
+    assert result.wav_bytes
+    assert tts.spoken
+    assert "https://" not in tts.spoken[0]
+    assert "http://" not in tts.spoken[0]
+
+
+def test_stt_kill_switch_fails_closed() -> None:
+    try:
+        run_voice_turn(
+            audio=AudioBuffer(pcm16le=sine_pcm16(400), sample_rate=16000),
+            stt=MockSpeechToText(),
+            llm=MockLLM(),
+            tts=MockTextToSpeech(),
+            cancellation=CancellationFlag(),
+            config=OrchestratorConfig(
+                max_attempts=1,
+                backoff_seconds=0,
+                kill_switch=KillSwitch(stt_enabled=False),
+            ),
+        )
+    except TurnError as exc:
+        assert exc.code == "stt_failure"
+    else:
+        raise AssertionError("expected stt kill switch")
+
+
+def test_tts_kill_switch_returns_text_without_audio() -> None:
+    result = run_text_turn(
+        text="What is phishing?",
+        llm=MockLLM(),
+        tts=MockTextToSpeech(),
+        cancellation=CancellationFlag(),
+        speak=True,
+        config=OrchestratorConfig(
+            max_attempts=1,
+            backoff_seconds=0,
+            kill_switch=KillSwitch(tts_enabled=False),
+        ),
+    )
+    assert result.reply_text
+    assert result.wav_bytes is None

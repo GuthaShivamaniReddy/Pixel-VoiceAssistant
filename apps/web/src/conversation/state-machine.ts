@@ -17,7 +17,14 @@ const ALLOWED: Record<PixelState, ReadonlySet<ConversationEvent["type"]>> = {
     "MIC_UNAVAILABLE",
     "CLEAR",
   ]),
-  processing: new Set(["RESPONSE_READY", "FAIL", "CANCEL", "CLEAR", "START_LISTENING"]),
+  processing: new Set([
+    "RESPONSE_READY",
+    "SPEAKING_DONE",
+    "FAIL",
+    "CANCEL",
+    "CLEAR",
+    "START_LISTENING",
+  ]),
   speaking: new Set([
     "SPEAKING_DONE",
     "STOP_SPEAKING",

@@ -1,5 +1,7 @@
 import type { RefObject } from "react";
 
+import { ControlIcon } from "./ControlIcon";
+
 type TextComposerProps = {
   value: string;
   onChange: (value: string) => void;
@@ -34,13 +36,14 @@ export function TextComposer({ value, onChange, onSubmit, disabled, inputRef }: 
               onSubmit();
             }
           }}
-          placeholder="Type a question. Enter to send, Shift+Enter for a new line."
+          placeholder="Ask about Cyber Florida or defensive cybersecurity. Enter to send."
         />
         <button
           type="submit"
           className="control control--primary"
           disabled={disabled || !value.trim()}
         >
+          <ControlIcon name="send" />
           Send
         </button>
       </div>

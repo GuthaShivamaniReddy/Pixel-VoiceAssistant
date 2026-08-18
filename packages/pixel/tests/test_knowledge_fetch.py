@@ -4,9 +4,16 @@ import pytest
 from pixel.knowledge.fetch import fetch_approved_html
 
 
-def test_fetch_rejects_arbitrary_urls() -> None:
-    with pytest.raises(ValueError):
-        fetch_approved_html("https://evil.example/page")
+def test_fetch_rejects_ssrf_and_unsafe_schemes() -> None:
+    for url in (
+        "https://127.0.0.1/",
+        "https://localhost/admin",
+        "file:///etc/passwd",
+        "javascript:alert(1)",
+        "https://169.254.169.254/latest/meta-data/",
+    ):
+        with pytest.raises(ValueError):
+            fetch_approved_html(url)
 
 
 def test_fetch_uses_canonical_allowlisted_url() -> None:

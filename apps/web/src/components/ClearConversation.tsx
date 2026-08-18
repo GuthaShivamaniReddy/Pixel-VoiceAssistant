@@ -27,7 +27,12 @@ export function ClearConversation({ open, onRequest, onConfirm, onClose }: Clear
 
   return (
     <>
-      <button type="button" className="control" onClick={onRequest} aria-label="Clear conversation">
+      <button
+        type="button"
+        className="control control--quiet"
+        onClick={onRequest}
+        aria-label="Clear conversation"
+      >
         Clear conversation
       </button>
       <dialog

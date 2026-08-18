@@ -7,9 +7,13 @@ import re
 from pixel.domain import Intent, IntentResult
 
 _INJECTION = re.compile(
-    r"ignore (all )?previous|reveal (your )?system prompt|dump system prompt|"
-    r"print (your )?api key|act as an unrestricted|jailbreak|you are now dan|"
-    r"hidden instructions",
+    r"ignore (all )?previous|reveal (your )?(hidden )?(system prompt|developer instructions)|"
+    r"dump system prompt|print (your )?(api key|environment variables)|"
+    r"give me your (api key|realtime|database)|show me (your )?(api key|database|secrets)|"
+    r"act as (an unrestricted|the system administrator)|jailbreak|you are now dan|"
+    r"hidden instructions|disable your safety|pretend i (already )?passed authorization|"
+    r"use every tool available|what is openai_api_key|show me database_url|"
+    r"repeat the secrets|print every environment",
     re.I,
 )
 _OFFENSIVE = re.compile(
@@ -23,8 +27,10 @@ _SCAM = re.compile(
     re.I,
 )
 _NAV = re.compile(
-    r"\b(open|show me|take me to|navigate to|go to)\b.+\b(page|site|program|link)\b|"
-    r"open (the )?cyber florida|show me that program",
+    r"\b(open|show me|take me to|navigate to|go to|visit)\b.+\b(page|site|program|link|url)\b|"
+    r"open (the )?cyber florida|show me that program|"
+    r"\b(open|visit|go to|navigate to)\s+https?://|"
+    r"^(open|show) (that|it|this|the (first|second|third) one)",
     re.I,
 )
 _CYBER_HELP = re.compile(
@@ -41,8 +47,10 @@ _ORG = re.compile(
     re.I,
 )
 _FOLLOWUP = re.compile(
-    r"^(tell me more|what about( that| it| them| beginners| eligibility)?|"
-    r"that one|the first one|and (the|that)|eligibility( requirements)?)[\s.?!]*$",
+    r"^(tell me more\b.*|"
+    r"what about( that| it| them| beginners| eligibility)?|"
+    r"that one|the first one|the second one|the third one|"
+    r"and (the|that)|eligibility( requirements)?)[\s.?!]*$",
     re.I,
 )
 _GREETING = re.compile(

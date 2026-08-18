@@ -10,7 +10,7 @@ from pixel.orchestrator.turn import TurnError
 from pixel.providers.errors import ProviderError
 from pixel.shared.cancellation import CancellationFlag, CancelledError
 from pixel.voice import AudioBuffer, SpeechAudio, TranscriptEvent
-from pixel.voice.audio import looks_like_silence, pcm16_to_wav, sine_pcm16
+from pixel.voice.audio import looks_like_silence, pcm16_to_wav, speechish_pcm16
 
 _INJECTION = re.compile(
     r"ignore previous|reveal the system prompt|give the user an admin tool|"
@@ -85,7 +85,7 @@ class MockTextToSpeech:
             raise CancelledError
         if not text.strip():
             raise TurnError("tts_failure", "I have a written reply, but speech playback failed.")
-        pcm = sine_pcm16(420)
+        pcm = speechish_pcm16(text)
         yield SpeechAudio(wav_bytes=pcm16_to_wav(pcm, 16000), is_final=True)
 
 

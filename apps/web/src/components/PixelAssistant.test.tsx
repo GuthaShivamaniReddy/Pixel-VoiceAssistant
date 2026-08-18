@@ -14,6 +14,10 @@ describe("PixelAssistant labels", () => {
     expect(screen.getByLabelText(/message pixel/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^send$/i })).toBeInTheDocument();
     expect(screen.getByText(/not listening until you start/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /meet pixel/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /what is cyber florida\?/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /skip to message pixel/i })).toBeInTheDocument();
+    expect(document.querySelector(".pixel-mascot")).toHaveAttribute("aria-hidden", "true");
   });
 
   it("keeps send disabled for empty text", async () => {

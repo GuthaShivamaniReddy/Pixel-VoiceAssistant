@@ -4,6 +4,7 @@ import { SourceCard } from "./SourceCard";
 import { RecommendedAction } from "./RecommendedAction";
 import { AssistantStateIndicator } from "./AssistantStateIndicator";
 import { MuteControl } from "./MuteControl";
+import { ConversationTurn } from "./ConversationTurn";
 
 describe("conversation components", () => {
   it("renders a mock source card with an accessible link", () => {
@@ -62,7 +63,7 @@ describe("conversation components", () => {
       />,
     );
     expect(
-      screen.getByRole("link", { name: /learn more \(opens in a new tab\)/i }),
+      screen.getByRole("link", { name: /learn more \(opens cyberflorida.org in a new tab\)/i }),
     ).toBeInTheDocument();
   });
 
@@ -76,6 +77,32 @@ describe("conversation components", () => {
     );
     expect(screen.getByRole("status")).toHaveTextContent(/listening/i);
     expect(screen.getByRole("status")).toHaveTextContent(/microphone is on/i);
+  });
+
+  it("renders transcript and source titles as text, not HTML", () => {
+    const { container } = render(
+      <ConversationTurn
+        turn={{
+          id: "xss",
+          role: "pixel",
+          text: "<script>alert(1)</script>",
+          sources: [
+            {
+              title: "<img src=x onerror=alert(1)>",
+              name: "Cyber Florida",
+              url: "https://cyberflorida.org/about/",
+              description: "<b>injected</b>",
+              provenance: "retrieval",
+            },
+          ],
+          actions: [],
+        }}
+      />,
+    );
+    expect(container.querySelector("script")).toBeNull();
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("b")).toBeNull();
+    expect(container).toHaveTextContent("<script>alert(1)</script>");
   });
 
   it("exposes mute as a labeled pressed button", () => {
@@ -94,5 +121,36 @@ describe("conversation components", () => {
     expect(screen.getByRole("button", { name: /unmute speech playback/i })).toHaveTextContent(
       "Muted",
     );
+  });
+
+  it("marks security replies as warning guidance, not a verdict", () => {
+    render(
+      <ConversationTurn
+        turn={{
+          id: "warn",
+          role: "pixel",
+          text: "I cannot tell if this is a scam. Common signs include urgent payment requests.",
+          sources: [],
+          actions: [],
+        }}
+      />,
+    );
+    expect(screen.getByText(/warning signs, not a verdict/i)).toBeInTheDocument();
+  });
+
+  it("marks unverified replies as uncertainty, not an error", () => {
+    render(
+      <ConversationTurn
+        turn={{
+          id: "unsure",
+          role: "pixel",
+          text: "I cannot verify that from an approved source.",
+          sources: [],
+          actions: [],
+        }}
+      />,
+    );
+    expect(screen.getByText(/could not verify from an approved source/i)).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

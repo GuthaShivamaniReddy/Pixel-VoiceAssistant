@@ -20,11 +20,13 @@ API routes (`POST /v1/turns`, `WS /v1/realtime`) do not call the LLM themselves.
 2. Load session context (last 8 messages, last intent).
 3. Classify intent (deterministic rules).
 4. If `cyberflorida_knowledge`, retrieve from the approved index. Missing evidence abstains; the model is not asked to guess.
-5. Load server-side policy `pixel-behavior` `1.3.0`.
+5. Load server-side policy `pixel-behavior` `1.5.0`.
 6. Call `LLMProvider` with a normalized `LlmRequest` (evidence is untrusted data), or use a canned refusal/abstention when `skip_model` is set.
 7. Validate output (empty, length, secret/policy leak).
-8. Attach allowlisted sources/actions from retrieval or policy. Model output cannot grant tools or extra URLs.
+8. Attach allowlisted sources/actions from retrieval or tools. Model output cannot grant tools or extra URLs.
 9. Optional TTS.
+
+Tool details: `docs/tools.md`.
 
 ## Session state
 
@@ -36,7 +38,7 @@ Postgres remains the intended system of record (ADR-0005). Knowledge tables exis
 
 `cyberflorida_knowledge` · `cybersecurity_help` · `scam_help` · `navigation` · `clarification` · `unsupported`
 
-Routing is deterministic (ADR-0010). Org questions set `requires_retrieval=True` and must retrieve. Navigation sets `requires_tool=True` and is not executed (Phase 7).
+Routing is deterministic (ADR-0010). Org questions set `requires_retrieval=True` and must retrieve. Navigation sets `requires_tool=True` and runs `navigate_to_url` through the registry (ADR-0012).
 
 ## Timeouts and retries
 

@@ -1,6 +1,6 @@
 # Pixel — Roadmap
 
-**Document status:** Phase 6 knowledge/RAG is complete. **Do not start Phase 7 automatically.**
+**Document status:** Phase 9 product quality and frontend polish is complete. **Do not start Phase 10 automatically.**
 
 This roadmap follows the project-guide PDF’s fourteen-phase method.
 
@@ -17,7 +17,10 @@ This roadmap follows the project-guide PDF’s fourteen-phase method.
 | 4 | End-to-end voice loop | **Complete (PARTIAL live STT/TTS)** |
 | 5 | AI orchestrator and conversation state | **Complete** |
 | 6 | Cyber Florida knowledge ingestion and RAG | **Complete** |
-| 7–14 | Tools through continuous improvement | **Not started** |
+| 7 | Tools, actions, and program navigation | **Complete** |
+| 8 | Security, privacy, and abuse resistance | **Complete** |
+| 9 | Product quality and frontend polish | **Complete** |
+| 10–14 | Observability through continuous improvement | **Not started** |
 
 ---
 
@@ -172,7 +175,7 @@ This roadmap follows the project-guide PDF’s fourteen-phase method.
 
 ## Phase 7 — Tools, actions, and program navigation
 
-**Objective:** Safe next steps, not only answers.
+**Status:** Complete as allowlisted navigation and read-only discovery tools. No arbitrary URL, HTTP, shell, or database tools.
 
 **Work:**
 
@@ -185,22 +188,26 @@ This roadmap follows the project-guide PDF’s fourteen-phase method.
 
 ## Phase 8 — Security, privacy, and abuse resistance
 
+**Status:** Complete as engineering hardening. Institutional SSO, distributed rate limiting, and legal privacy wording remain deferred.
+
 **Objective:** Harden before broad testing.
 
 **Work:**
 
-- Implement `SECURITY.md` controls: rate limits, CSP, redaction, injection tests, kill switches, secret rotation docs.
-- Confirm admin fail-closed.
+- Threat model, security review, retention, incident and rotation runbooks.
+- Server-side rate limits (in-process), request size limits, headers/CSP/CORS, log redaction, kill switches, admin token fail-closed, secret scan.
 
-**Exit:** Critical findings fixed. Sensitive values absent from standard logs.
+**Exit:** Critical findings fixed. Sensitive values absent from standard logs. Privileged actions demonstrably protected.
 
 ---
 
 ## Phase 9 — Product quality and frontend polish
 
+**Status:** Complete as frontend/product polish. Observability work belongs to Phase 10.
+
 **Objective:** Cyber Florida-ready UI.
 
-**Work:** Visual identity, responsive behavior, source cards, error/empty states, a11y review, audio polish.
+**Work:** Design tokens, Pixel digital stage, welcome/empty/error polish, source and action presentation, voice control clarity, responsive layouts, keyboard/focus/reduced-motion, truthful mascot states.
 
 **Exit:** State always understandable. No core flow is pointer-only or audio-only.
 
