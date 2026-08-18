@@ -141,7 +141,7 @@ THREAT MODEL:
 PASS — `docs/security/threat-model.md` matches this repo (browser, mic, WS, API, sessions, orchestrator, providers, RAG, tools, admin, DB, logs, CI, secrets).
 
 SECRET MANAGEMENT:
-PASS — `.env` gitignored; examples empty; `NEXT_PUBLIC_*` secret-shaped names throw; production build has no `OPENAI_API_KEY` / `sk-live-` / `ADMIN_TOKEN`; repo secret scan and git history scan pass.
+PASS — `.env` gitignored; examples empty; `NEXT_PUBLIC_*` secret-shaped names throw; production build has no `OPENAI_API_KEY` / live OpenAI key material / `ADMIN_TOKEN`; repo secret scan and git history scan pass.
 
 REALTIME TOKEN SECURITY:
 PASS / N/A — browser talks to Pixel `WS /v1/realtime`, not a vendor realtime API. Long-lived provider keys stay on the server.
